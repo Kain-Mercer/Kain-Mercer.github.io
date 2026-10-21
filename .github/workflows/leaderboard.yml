@@ -1,0 +1,50 @@
+name: Leaderboard
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  add-score:
+    if: startsWith(github.event.issue.title, '[Across Country score]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add the run to the board
+        env:
+          RESULT_FILE: ${{ runner.temp }}/result.json
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Other submissions can land at the same time, so redo the merge on top of
+          # the latest main until the push goes through.
+          for attempt in 1 2 3 4 5 6; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            node .github/scripts/add-score.mjs
+            if git diff --quiet; then break; fi
+            git commit -qam "Leaderboard: add score from #$ISSUE"
+            if git push -q origin HEAD:main; then break; fi
+            if [ "$attempt" = 6 ]; then exit 1; fi
+            sleep $((attempt * 3))
+          done
+
+      - name: Reply and close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT_FILE: ${{ runner.temp }}/result.json
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.env.RESULT_FILE,"utf8")).message)' > "$RUNNER_TEMP/reply.md"
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/reply.md"
+          if node -e 'process.exit(JSON.parse(require("fs").readFileSync(process.env.RESULT_FILE,"utf8")).ok ? 0 : 1)'; then
+            gh issue close "$ISSUE" --repo "$GITHUB_REPOSITORY" --reason completed
+          else
+            gh issue close "$ISSUE" --repo "$GITHUB_REPOSITORY" --reason "not planned"
+          fi

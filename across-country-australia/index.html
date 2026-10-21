@@ -483,6 +483,9 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
 }
 .introBtn:hover{ filter:brightness(1.08); }
 .introBtn.ghost{ background:transparent; border:1px solid var(--panel-line); color: var(--parchment); margin-top:8px; }
+.lbRow{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:12px; }
+.lbRow .introBtn.ghost{ margin-top:0; font-size:.9rem; padding:8px 16px; text-decoration:none; }
+.lbHint{ color: var(--muted); font-size:.8rem; margin:0 0 14px; }
 
 /* ---- Network Deliveries: GPS map widget ----
    SVG map projected from the same NET_NODES the routing engine uses, so what you see is
@@ -1185,6 +1188,11 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
       <div class="statcard"><div class="n" id="statNaps">0</div><div class="l">power naps taken</div></div>
     </div>
     <div class="refuelnote" id="bestNote" style="display:none;"></div>
+    <div class="lbRow">
+      <button class="introBtn ghost" id="lbSubmit">&#127942; Submit to leaderboard</button>
+      <a class="introBtn ghost" href="https://kain-mercer.github.io/across-country-australia-leaderboard/" target="_blank" rel="noopener">View leaderboard</a>
+    </div>
+    <p class="lbHint">Submitting opens a pre-filled GitHub issue. Sign in and press "Create" to post your run.</p>
     <button class="introBtn" id="arrivalClose">Keep exploring Borroloola</button>
   </div>
 </div>
@@ -3652,6 +3660,63 @@ document.getElementById('arrivalClose').addEventListener('click', ()=>{
   closeOverlay('arrivalOverlay');
 });
 
+/* ---------------- LEADERBOARD ----------------
+   No server: the run is posted as a pre-filled GitHub issue on the arcade repo, and a workflow
+   there checks it and adds it to the board. The check code only stops hand-edited issues, it
+   isn't real anti-cheat. The workflow repeats the same hash, so keep the two in step. */
+const LB_REPO = 'Kain-Mercer/Kain-Mercer.github.io';
+const LB_TITLE = '[Across Country score]';
+function lbHash(str){
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i=0;i<str.length;i++){
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(36);
+}
+function lbRun(){
+  if(!state.runId) state.runId = Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  const run = {
+    v: 1,
+    run: state.runId,
+    name: (state.playerName || 'Driver').slice(0,24),
+    company: (state.companyName || '').slice(0,40),
+    vehicle: state.vehicle,
+    days: state.day,
+    km: Math.round(TOTAL_DISTANCE),
+    streak: state.bestStreak,
+    items: state.discovered.length,
+    tows: state.towCount,
+    naps: state.napCount
+  };
+  const keys = ['v','run','name','company','vehicle','days','km','streak','items','tows','naps'];
+  run.check = lbHash('acau|' + keys.map(k=>run[k]).join('|'));
+  return run;
+}
+document.getElementById('lbSubmit').addEventListener('click', ()=>{
+  const run = lbRun();
+  saveGame();
+  const veh = VEHICLES[run.vehicle] || VEHICLES.van;
+  const title = `${LB_TITLE} ${run.name}: ${run.days} days`;
+  const body = [
+    `**${run.name}** delivered to Borroloola in **${run.days} days** in the ${veh.name}.`,
+    '',
+    `Best sleep streak ${run.streak} · things collected ${run.items} · towed in ${run.tows} · power naps ${run.naps}`,
+    '',
+    'Press **Create** to submit. The leaderboard adds your run in a minute or two and replies here.',
+    'Please leave the block below as it is, or the run will be turned away.',
+    '',
+    '```json',
+    JSON.stringify(run),
+    '```'
+  ].join('\n');
+  const url = `https://github.com/${LB_REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  window.open(url, '_blank', 'noopener');
+});
+
 /* ---------------- RENDER ---------------- */
 function render(){
   const comfort = currentComfort();
@@ -4975,7 +5040,7 @@ async function saveGame(){
       discovered: state.discovered, unlockedMemories: state.unlockedMemories, visitedStops: state.visitedStops,
       streak: state.streak, bestStreak: state.bestStreak, coldNight: state.coldNight, perfectAchieved: state.perfectAchieved,
       towCount: state.towCount, napCount: state.napCount,
-      distanceTraveled: state.distanceTraveled, arrived: state.arrived, arrivalCelebrated: state.arrivalCelebrated,
+      distanceTraveled: state.distanceTraveled, arrived: state.arrived, arrivalCelebrated: state.arrivalCelebrated, runId: state.runId,
       atServo: state.atServo, servoStopIdx: state.servoStopIdx, servoOffers: state.servoOffers,
       servoSnackOffers: state.servoSnackOffers,
       poiLocation: state.poiLocation,
@@ -5036,7 +5101,7 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
     inventory:{}, newItemIds:[], log:[], todayLocations:[],
     seenLocationNames:[], discovered:[], unlockedMemories:[], visitedStops:[], streak:0, bestStreak:0, coldNight:false,
     towCount:0, napCount:0, petFound:false, petPity:0, jerryCanFound:true, jerryCanFuel:0,
-    perfectAchieved:false, distanceTraveled:0, arrived:false, arrivalCelebrated:false,
+    perfectAchieved:false, distanceTraveled:0, arrived:false, arrivalCelebrated:false, runId:null,
     atServo:false, servoStopIdx:null, servoOffers:[], servoSnackOffers:[], poiLocation:null,
     deliveryMode:'classic', networkCity:null, activeDeliveries:[], networkLegKm:0,
   });

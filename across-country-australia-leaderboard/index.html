@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Across Country Leaderboard</title>
+<meta name="description" content="Fastest deliveries in Across Country: Australia, from Dampier to Borroloola.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151923; --line:#262c3a; --ink:#e8e6df; --dim:#8a8f9c;
+    --accent:#e8a33d; --gold:#f5c542; --silver:#c9ced8; --bronze:#d08a4f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font-family:'VT323',ui-monospace,monospace;font-size:22px;line-height:1.35;
+    background-image:radial-gradient(circle at 50% -20%,#2a1d12 0,transparent 60%);min-height:100vh}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 16px}
+  .back{color:var(--dim);text-decoration:none}
+  .back:hover{color:var(--accent)}
+  header{text-align:center;margin:24px 0 32px}
+  .van{font-size:56px;transform:scaleX(-1);display:inline-block}
+  h1{font-family:'Press Start 2P',monospace;font-size:clamp(14px,3.6vw,24px);letter-spacing:2px;margin:12px 0;
+    color:var(--accent);text-shadow:3px 3px 0 #000;line-height:1.5}
+  .sub{color:var(--dim);margin:0}
+  .panel{background:var(--panel);border:2px solid var(--line);box-shadow:6px 6px 0 #000;overflow:hidden}
+  table{width:100%;border-collapse:collapse}
+  th{font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1px;color:var(--accent);text-align:left;
+    padding:14px 12px;border-bottom:2px solid var(--line)}
+  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:baseline}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .rank{width:56px;font-family:'Press Start 2P',monospace;font-size:12px}
+  tr.r1 .rank{color:var(--gold)} tr.r2 .rank{color:var(--silver)} tr.r3 .rank{color:var(--bronze)}
+  .days{font-size:28px;color:var(--accent)}
+  .who a{color:var(--dim);font-size:18px;text-decoration:none}
+  .who a:hover{color:var(--accent)}
+  .co{display:block;color:var(--dim);font-size:17px}
+  .empty{padding:36px 16px;text-align:center;color:var(--dim)}
+  .how{margin-top:28px;color:#c9c7c0}
+  .how h2{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent);margin:0 0 10px}
+  .how p{margin:0 0 8px}
+  a.btn{font-family:'Press Start 2P',monospace;font-size:10px;text-decoration:none;color:#0d0f14;
+    background:var(--accent);padding:12px 14px;box-shadow:3px 3px 0 #000;display:inline-block;margin-top:8px}
+  a.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+  a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+  footer{text-align:center;color:var(--dim);margin-top:40px;font-size:18px}
+  @media (max-width:640px){ .wide{display:none} th,td{padding-left:8px;padding-right:8px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../">◀ All games</a>
+  <header>
+    <div class="van">🚐</div>
+    <h1>ACROSS COUNTRY<br>LEADERBOARD</h1>
+    <p class="sub">Fastest deliveries from Dampier to Borroloola. Fewer days on the road is better.</p>
+  </header>
+
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th class="rank">#</th>
+          <th>DRIVER</th>
+          <th class="num">DAYS</th>
+          <th class="wide">RIG</th>
+          <th class="num wide">STREAK</th>
+          <th class="num wide">FOUND</th>
+          <th class="wide">DATE</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden></div>
+  </div>
+
+  <section class="how">
+    <h2>HOW TO GET ON THE BOARD</h2>
+    <p>Finish a Classic delivery, then press <b>Submit to leaderboard</b> on the arrival screen. It opens a pre-filled GitHub issue: sign in, press Create, and your run shows up here within a few minutes. Each GitHub account keeps its best run.</p>
+    <a class="btn" href="../across-country-australia/">▶ PLAY</a>
+  </section>
+
+  <footer>© Kain Mercer · EmuSoft</footer>
+</div>
+<script>
+const RIGS = { hatchback: '🚗 Hatchback', suv: '🚙 SUV', van: '🚐 Van', bus: '🚌 Bus' };
+
+function cell(row, text, cls){
+  const td = document.createElement('td');
+  if(cls) td.className = cls;
+  td.textContent = text;
+  row.appendChild(td);
+  return td;
+}
+
+function render(board){
+  const rows = document.getElementById('rows');
+  const entries = (board && board.entries) || [];
+  if(!entries.length){
+    const empty = document.getElementById('empty');
+    empty.textContent = 'No deliveries yet. Be the first on the board.';
+    empty.hidden = false;
+    return;
+  }
+  entries.forEach((e, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'r' + (i + 1);
+    cell(tr, i + 1, 'rank');
+    const who = cell(tr, e.name + ' ', 'who');
+    const gh = document.createElement('a');
+    gh.href = 'https://github.com/' + encodeURIComponent(e.login);
+    gh.textContent = '@' + e.login;
+    gh.rel = 'noopener';
+    who.appendChild(gh);
+    if(e.company){
+      const co = document.createElement('span');
+      co.className = 'co';
+      co.textContent = e.company;
+      who.appendChild(co);
+    }
+    cell(tr, e.days, 'num days');
+    cell(tr, RIGS[e.vehicle] || e.vehicle, 'wide');
+    cell(tr, e.streak, 'num wide');
+    cell(tr, e.items, 'num wide');
+    cell(tr, e.date, 'wide');
+    rows.appendChild(tr);
+  });
+}
+
+// Read from the repo first so a new run shows before the site redeploys,
+// and fall back to the copy published next to this page.
+async function load(){
+  const sources = [
+    'https://raw.githubusercontent.com/Kain-Mercer/Kain-Mercer.github.io/main/across-country-australia-leaderboard/scores.json?t=' + Date.now(),
+    'scores.json'
+  ];
+  for(const url of sources){
+    try{
+      const res = await fetch(url, { cache: 'no-store' });
+      if(res.ok) return render(await res.json());
+    }catch(e){ /* try the next source */ }
+  }
+  const empty = document.getElementById('empty');
+  empty.textContent = "The leaderboard couldn't load. Try again in a minute.";
+  empty.hidden = false;
+}
+load();
+</script>
+</body>
+</html>
