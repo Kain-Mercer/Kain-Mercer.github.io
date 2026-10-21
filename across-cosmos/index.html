@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACROSS COSMOS: ALPHA CENTAURI // build 0.7 - trading & upgrade economy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --hull-navy: #0b1119;
+    --hull-panel: #131d2b;
+    --hull-panel-edge: #223046;
+    --brass: #c9a24a;
+    --brass-dim: #8a7238;
+    --ochre: #a8622f;
+    --parchment: #e8e0cf;
+    --slate: #7c8a9e;
+    --alert: #c1453f;
+    --steel-teal: #4f9992;
+    --world-light: transparent;
+    --panel-radius: 3px;
+  }
+  body.phase-departure{
+    --hull-navy: #0c131d; --brass: #d4ab52;
+  }
+  body.phase-longDark{
+    --hull-navy: #080c12; --hull-panel: #0f1621; --hull-panel-edge: #1b2635;
+    --brass: #8f7638; --brass-dim: #5f4f2a; --slate: #5d6a7c; --parchment: #cfc9ba;
+  }
+  body.phase-approach{
+    --world-light: #b9d8e0; --brass: #d8b562;
+  }
+  body.phase-arrival{
+    --world-light: #cfe6ec; --brass: #e0be6e;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    background:
+      radial-gradient(ellipse at 20% -10%, color-mix(in srgb, var(--world-light) 14%, transparent), transparent 55%),
+      var(--hull-navy);
+    color:var(--parchment);
+    padding:22px 20px 40px; max-width:860px; margin:0 auto;
+    transition: background 0.8s ease;
+  }
+  button, .dutyBtn{ font-family:'IBM Plex Sans', system-ui, sans-serif; }
+  .mono, #log, #combatLog, #logPanel, .stat span:last-child, #btnSub{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+
+  /* ---------- identity block ---------- */
+  #identity{display:flex; align-items:center; gap:16px; margin-bottom:6px;}
+  #roundel{flex-shrink:0; animation: roundel-boot 900ms ease-out;}
+  @media (prefers-reduced-motion: reduce){ #roundel{animation:none;} }
+  @keyframes roundel-boot{ from{opacity:0; transform:scale(0.85);} to{opacity:1; transform:scale(1);} }
+  #shipTitle h1{
+    font-family:'Big Shoulders Display', system-ui, sans-serif; font-weight:700;
+    font-size:26px; letter-spacing:1.5px; color:var(--parchment); margin:0; text-transform:uppercase;
+  }
+  #shipTitle .designation{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--brass); letter-spacing:2px; }
+  .sub{color:var(--slate); font-size:12px; margin:4px 0 18px; letter-spacing:0.3px;}
+
+  h2{
+    font-family:'Big Shoulders Display', system-ui, sans-serif; font-weight:600;
+    font-size:13px; letter-spacing:1.5px; color:var(--brass); margin:0 0 10px; text-transform:uppercase;
+  }
+
+  .row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px;}
+  .panel{
+    background:var(--hull-panel); border-top:2px solid var(--brass);
+    border-radius:0 0 var(--panel-radius) var(--panel-radius); padding:13px 15px 14px;
+    flex:1; min-width:220px; position:relative;
+  }
+  .panel::before, .panel::after{
+    content:''; position:absolute; top:-2px; width:6px; height:6px; border-top:2px solid var(--hull-navy);
+  }
+  .stat{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; color:var(--parchment);}
+  .stat span:first-child{color:var(--slate); font-family:'IBM Plex Sans', sans-serif;}
+  .bar{height:5px; background:#0000002e; background:color-mix(in srgb, var(--hull-navy) 60%, black); border-radius:2px; overflow:hidden; margin:2px 0 9px;}
+  .bar > div{height:100%; transition:width 0.5s ease;}
+  .bar.fuel>div{background:var(--ochre);}
+  .bar.hull>div{background:var(--alert);}
+  .bar.shields>div{background:var(--steel-teal);}
+  .bar:not(.fuel):not(.hull):not(.shields) > div{background:var(--brass);}
+  .crewline{font-size:12px; display:flex; justify-content:space-between; margin-bottom:3px;}
+  #log{
+    height:190px; overflow-y:auto; background:var(--hull-panel); border-left:2px solid var(--hull-panel-edge);
+    border-radius:var(--panel-radius); padding:10px 12px; font-size:12.5px; margin-bottom:16px;
+  }
+  #log div{margin-bottom:4px;}
+  .l-cruise{color:var(--slate);}
+  .l-event{color:var(--brass);}
+  .l-arrive{color:var(--steel-teal);}
+  .l-warn{color:var(--alert);}
+  .l-crew{color:#8fbcbf;}
+
+  button{
+    background:var(--hull-panel); color:var(--parchment); border:1px solid var(--hull-panel-edge);
+    border-radius:var(--panel-radius); padding:10px 16px; font-size:13px; cursor:pointer; margin:0 8px 8px 0;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  button:hover:not(:disabled){border-color:var(--brass); background:color-mix(in srgb, var(--brass) 8%, var(--hull-panel));}
+  button:focus-visible{outline:2px solid var(--brass); outline-offset:1px;}
+  button:disabled{opacity:0.35; cursor:default;}
+  #btnSub{color:var(--slate); font-size:11px; margin-top:2px;}
+
+  .phase-tag{display:inline-block; padding:2px 9px; border-radius:9px; font-size:10.5px; letter-spacing:1px; border:1px solid; text-transform:uppercase;}
+  .phase-tag.phase-departure{color:#8fbf9a; border-color:#3a5a42; background:#132018;}
+  .phase-tag.phase-longDark{color:#c98a82; border-color:#4a2e2a; background:#1a1210;}
+  .phase-tag.phase-approach{color:#e0c078; border-color:#5a4a2a; background:#201a10;}
+  .phase-tag.phase-arrival{color:#9fd3d8; border-color:#2a4a4e; background:#101c1e;}
+
+  .salvage{color:var(--brass); font-size:12px; margin-bottom:12px; letter-spacing:0.3px;}
+
+  #combatPanel{
+    display:none; background:#160f11; border:1px solid #4a2430; border-left:3px solid var(--alert);
+    border-radius:var(--panel-radius); padding:15px 16px; margin-bottom:16px;
+  }
+  #combatPanel h2{color:#d98a80; margin:0 0 11px;}
+  .combatSide{margin-bottom:10px;}
+  .combatSide .stat{font-size:13px;}
+  .bar.enemyHull>div{background:var(--alert);}
+  .bar.enemyShields>div{background:#b78ad8;}
+  .combo{display:flex; gap:5px; margin:6px 0 10px; align-items:center;}
+  .combo-pip{width:13px; height:13px; border-radius:50%; border:1px solid #4a2430; background:#1c1218;}
+  .combo-pip.lit{background:#d98a80;}
+  .combo-pip.max{background:var(--brass); box-shadow:0 0 6px var(--brass);}
+  #combatLog{height:105px; overflow-y:auto; background:#0d0a0d; border-radius:var(--panel-radius); padding:8px 10px; font-size:12px; margin-bottom:10px;}
+  #combatLog div{margin-bottom:3px;}
+  .cl-hit{color:var(--brass);}
+  .cl-crit{color:#e8935a;}
+  .cl-dmg{color:var(--alert);}
+  .cl-sys{color:var(--slate);}
+  .cl-win{color:var(--steel-teal);}
+
+  .crewCard{margin-bottom:10px; padding-bottom:9px; border-bottom:1px solid var(--hull-panel-edge);}
+  .crewCard:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+  .dutyButtons{display:flex; gap:5px; margin-top:5px; flex-wrap:wrap;}
+  .dutyBtn{background:var(--hull-navy); color:var(--slate); border:1px solid var(--hull-panel-edge); border-radius:3px; padding:4px 7px; font-size:10px; margin:0; cursor:pointer;}
+  .dutyBtn:hover{border-color:var(--brass);}
+  .dutyBtn.active{background:color-mix(in srgb, var(--brass) 18%, var(--hull-navy)); color:var(--brass); border-color:var(--brass);}
+  .dutyBtn.specialist.active{background:color-mix(in srgb, var(--steel-teal) 22%, var(--hull-navy)); color:#9fd6d0; border-color:var(--steel-teal);}
+
+  #narrPanel{
+    display:none; background:var(--hull-panel); border-radius:var(--panel-radius); padding:18px 20px; margin-bottom:16px;
+    border-top:1px solid var(--brass); border-bottom:1px solid var(--brass);
+  }
+  #narrPanel h2{color:var(--brass); margin:0 0 12px; font-size:14px;}
+  #narrText{font-family:'IBM Plex Sans', sans-serif; font-size:14.5px; line-height:1.65; color:var(--parchment); min-height:60px; margin-bottom:14px; white-space:pre-wrap; cursor:pointer;}
+  #narrChoices button{display:block; width:100%; text-align:left; margin:0 0 6px 0;}
+
+  .logToggle{color:var(--slate); font-size:12px; margin-bottom:10px; cursor:pointer; text-decoration:underline; display:inline-block;}
+  #logPanel{display:none; background:var(--hull-panel); border-radius:var(--panel-radius); padding:12px 15px; margin-bottom:16px; max-height:260px; overflow-y:auto;}
+  #logPanel .logEntry{margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--hull-panel-edge);}
+  #logPanel .logEntry:last-child{border-bottom:none;}
+  #logPanel .logEntry h3{font-family:'Big Shoulders Display', sans-serif; font-size:13px; color:var(--brass); margin:0 0 4px; text-transform:uppercase; letter-spacing:0.5px;}
+  #logPanel .logEntry p{font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; color:var(--slate); margin:0; line-height:1.55;}
+
+  .shopCols{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;}
+  .shopCol{flex:1; min-width:220px;}
+  .shopCol h3{font-family:'Big Shoulders Display', sans-serif; font-size:11.5px; letter-spacing:1px; color:var(--slate); text-transform:uppercase; margin:0 0 8px;}
+  .shopItem{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--hull-panel-edge); font-size:12px;}
+  .shopItem:last-child{border-bottom:none;}
+  .shopItem .itemName{color:var(--parchment);}
+  .shopItem .itemMeta{color:var(--slate); font-size:10.5px; display:block; margin-top:1px;}
+  .shopItem button{padding:4px 9px; font-size:11px; margin:0;}
+  .qPoor{color:#9d9d9d;} .qCommon{color:#d8e0ea;} .qUncommon{color:#4fd15a;}
+  .qRare{color:#5aa8e8;} .qEpic{color:#c07de8;} .qLegendary{color:#e8a548;}
+  .shopEmpty{color:var(--slate); font-size:12px; font-style:italic;}
+
+  .crewTabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+  .crewTabBtn{background:var(--hull-navy); color:var(--slate); border:1px solid var(--hull-panel-edge); border-radius:3px; padding:8px 12px; font-size:12px; margin:0; cursor:pointer; text-align:left; flex:1; min-width:150px;}
+  .crewTabBtn .tabName{display:block; color:var(--parchment); font-size:12.5px;}
+  .crewTabBtn .tabRole{display:block; color:var(--slate); font-size:10.5px; margin-top:1px;}
+  .crewTabBtn .tabMorale{display:block; color:var(--brass); font-size:10px; margin-top:3px;}
+  .crewTabBtn.active{border-color:var(--brass); background:color-mix(in srgb, var(--brass) 10%, var(--hull-navy));}
+  .crewTabBtn.active .tabName{color:var(--brass);}
+  .paneSection{margin-bottom:16px;}
+  .paneSection:last-child{margin-bottom:0;}
+  .paneSection h3{font-family:'Big Shoulders Display', sans-serif; font-size:12px; letter-spacing:1px; color:var(--slate); text-transform:uppercase; margin:0 0 8px;}
+  .routeList{font-size:12px;}
+  .routeStop{display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--hull-panel-edge); color:var(--slate);}
+  .routeStop:last-child{border-bottom:none;}
+  .routeStop.visited{color:var(--steel-teal);}
+  .routeStop.current{color:var(--brass); font-weight:600;}
+  .routingRow{display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--hull-panel-edge); font-size:12.5px;}
+  .routingRow:last-child{border-bottom:none;}
+  .routingBar{flex:1; height:6px; background:var(--hull-navy); border-radius:3px; margin:0 10px; overflow:hidden;}
+  .routingBar > div{height:100%; background:var(--brass);}
+  .gateNotice{background:color-mix(in srgb, var(--alert) 12%, var(--hull-panel)); border-left:2px solid var(--alert); padding:8px 10px; font-size:12px; color:var(--parchment); margin-bottom:12px; border-radius:2px;}
+
+  #btnNewVoyage{padding:4px 10px; font-size:10.5px; margin:0; flex-shrink:0;}
+
+  #endPanel{
+    display:none; background:var(--hull-panel); border-radius:var(--panel-radius); padding:22px 22px 20px; margin-bottom:16px;
+    border-top:2px solid var(--brass); border-bottom:2px solid var(--brass); text-align:center;
+  }
+  #endPanel h2{color:var(--brass); margin:0 0 10px; font-family:'Big Shoulders Display', sans-serif; font-size:20px; letter-spacing:1px; text-transform:uppercase;}
+  #endText{font-family:'IBM Plex Sans', sans-serif; font-size:14px; color:var(--parchment); line-height:1.65; margin:0 auto 18px; max-width:520px;}
+  #endStats{max-width:320px; margin:0 auto 20px; text-align:left;}
+  #endPanel button{margin:0 auto; display:block;}
+</style>
+</head>
+<body>
+<div id="identity">
+  <svg id="roundel" width="58" height="58" viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="47" fill="none" stroke="var(--brass)" stroke-width="2"/>
+    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--brass)" stroke-width="1" opacity="0.6"/>
+    <!-- Southern Cross asterism -->
+    <g fill="var(--parchment)">
+      <circle cx="50" cy="24" r="2.6"/>
+      <circle cx="58" cy="52" r="2.6"/>
+      <circle cx="45" cy="62" r="1.8"/>
+      <circle cx="34" cy="46" r="2.6"/>
+      <circle cx="41" cy="36" r="1.4"/>
+    </g>
+    <text x="50" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" fill="var(--brass)" letter-spacing="1">IASF-01</text>
+  </svg>
+  <div id="shipTitle">
+    <h1>New Dawn</h1>
+    <div class="designation">IMPERIAL AUSTRALIAN SPACE FLEET &nbsp;·&nbsp; FRIGATE</div>
+  </div>
+</div>
+<div class="sub" style="display:flex; justify-content:space-between; align-items:center;">
+  <span>Sol → Alpha Centauri &nbsp;·&nbsp; <span id="phaseTag" class="phase-tag"></span></span>
+  <button id="btnNewVoyage" onclick="requestNewVoyage(event)">↺ New Voyage</button>
+</div>
+
+<div class="row">
+  <div class="panel">
+    <h2>Navigation</h2>
+    <div class="stat"><span>Day</span><span id="stDay"></span></div>
+    <div class="stat"><span>Ship time</span><span id="stHour"></span></div>
+    <div class="stat"><span>Distance</span><span id="stDist"></span></div>
+    <div class="stat"><span>Next waypoint</span><span id="stNext"></span></div>
+  </div>
+  <div class="panel">
+    <h2>Ship Status</h2>
+    <div class="stat"><span>Fuel</span><span id="stFuelN"></span></div>
+    <div class="bar fuel"><div id="stFuel"></div></div>
+    <div class="stat"><span>Power</span><span id="stPowerN"></span></div>
+    <div class="bar"><div id="stPower"></div></div>
+    <div class="stat"><span>Hull</span><span id="stHullN"></span></div>
+    <div class="bar hull"><div id="stHull"></div></div>
+    <div class="stat"><span>Shields</span><span id="stShieldsN"></span></div>
+    <div class="bar shields"><div id="stShields"></div></div>
+  </div>
+  <div class="panel">
+    <h2>Crew</h2>
+    <div id="crewList"></div>
+  </div>
+</div>
+
+<div class="panel" id="crewStationsPanel" style="margin-bottom:16px;">
+  <h2>Crew Stations</h2>
+  <div class="crewTabs" id="crewTabs"></div>
+  <div id="crewPaneContent"></div>
+</div>
+
+<div class="salvage">Salvage: <span id="stSalvage"></span> · Contacts destroyed: <span id="stKills"></span></div>
+
+<span class="logToggle" id="logToggle" onclick="toggleLog()">Captain's Log (<span id="logCount">0</span>)</span>
+<div id="logPanel"></div>
+
+<div id="narrPanel">
+  <h2 id="narrTitle"></h2>
+  <div id="narrText" onclick="skipTypewrite()"></div>
+  <div id="narrChoices"></div>
+</div>
+
+<div id="combatPanel">
+  <h2 id="combatTitle"></h2>
+  <div class="combatSide">
+    <div class="stat"><span>New Dawn · Hull</span><span id="cPHullN"></span></div>
+    <div class="bar hull"><div id="cPHull"></div></div>
+    <div class="stat"><span>New Dawn · Shields</span><span id="cPShieldsN"></span></div>
+    <div class="bar shields"><div id="cPShields"></div></div>
+  </div>
+  <div class="combatSide">
+    <div class="stat"><span id="cEName">Contact · Hull</span><span id="cEHullN"></span></div>
+    <div class="bar enemyHull"><div id="cEHull"></div></div>
+    <div class="stat"><span>Contact · Shields</span><span id="cEShieldsN"></span></div>
+    <div class="bar enemyShields"><div id="cEShields"></div></div>
+  </div>
+  <div class="combo" id="comboPips">
+    <div class="combo-pip" id="pip0"></div><div class="combo-pip" id="pip1"></div><div class="combo-pip" id="pip2"></div>
+    <span id="comboLbl" style="font-size:11px; margin-left:6px;"></span>
+  </div>
+  <div id="combatLog"></div>
+  <button id="btnFire" onclick="combatFire()">Fire</button>
+  <button id="btnOvercharge" onclick="combatOvercharge()">Overcharge</button>
+  <button id="btnSystems" onclick="combatSystems()">Systems</button>
+  <button id="btnDisengage" onclick="combatDisengage()">Disengage</button>
+</div>
+
+<div id="endPanel">
+  <h2>Voyage Complete</h2>
+  <div id="endText">Twenty years compressed into a single crossing. New Dawn made it - hull scarred, crew steadier for the trial, exactly where the numbers said she'd be.</div>
+  <div id="endStats"></div>
+  <button onclick="requestNewVoyage(event)">Begin New Voyage</button>
+</div>
+
+<div id="log"></div>
+
+<div id="travelControls">
+  <button id="btnDrive" onclick="driveStep()"></button>
+  <button id="btnNap" onclick="powerNap()">Power nap</button>
+  <button id="btnScan" onclick="scanForContacts()">Scan for hostile contacts</button>
+  <button id="btnSurvey" onclick="surveyForMaterials()">Survey for materials</button>
+  <button id="btnInvestigate" onclick="investigateWaypoint()">Investigate</button>
+  <div id="btnSub"></div>
+</div>
+
+<script>
+/* ==================================================================
+   ACROSS COSMOS: ALPHA CENTAURI — build 0.5
+   Adds the narrative layer on top of the build-0.4 crew system:
+   Captain's Log + branching story nodes (port of Underpass's
+   STORY/renderNode/typewrite system), triggered by waypoint
+   arrivals and journey-phase transitions. Trading/upgrades are
+   NOT in this build - next step.
+   ================================================================== */
+
+/* ---------------- SALVAGE / QUALITY TIERS ---------------- */
+const QUALITY = {
+  poor:      {label:'Poor',      color:'#9d9d9d'},
+  common:    {label:'Common',    color:'#ffffff'},
+  uncommon:  {label:'Uncommon',  color:'#1eff00'},
+  rare:      {label:'Rare',      color:'#0070dd'},
+  epic:      {label:'Epic',      color:'#a335ee'},
+  legendary: {label:'Legendary', color:'#ff8000'},
+};
+const QUALITY_ORDER = ['poor','common','uncommon','rare','epic','legendary'];
+const QUALITY_NUM   = {poor:1, common:2, uncommon:3, rare:4, epic:5, legendary:6};
+const SELL_VALUE    = {poor:2, common:5, uncommon:12, rare:30, epic:70, legendary:150};
+const BUY_PRICE     = {poor:6, common:15, uncommon:36, rare:90, epic:210, legendary:450};
+
+/* ---------------- JOURNEY PHASE ---------------- */
+const JOURNEY_TOTAL_LY = 4.37;
+const JOURNEY_PHASES = {
+  departure: {id:'departure', label:'Departure',     from:0.00, to:0.15, mood:'hopeful'},
+  longDark:  {id:'longDark',  label:'The Long Dark',  from:0.15, to:0.75, mood:'grim'},
+  approach:  {id:'approach',  label:'Approach',       from:0.75, to:0.95, mood:'rising hope'},
+  arrival:   {id:'arrival',   label:'Arrival',        from:0.95, to:1.001, mood:'payoff'},
+};
+function journeyPhase(ly){
+  const pct = ly / JOURNEY_TOTAL_LY;
+  return Object.values(JOURNEY_PHASES).find(p => pct >= p.from && pct < p.to) || JOURNEY_PHASES.arrival;
+}
+function journeyPct(ly){ return Math.min(1, ly / JOURNEY_TOTAL_LY); }
+
+/* ---------------- THE SHIP: IASF "NEW DAWN" ----------------
+   efficiency / powerPerEnergy are recalibrated from km-scale to
+   ly-scale here: full tank/charge each comfortably clear the
+   longest single leg (~0.9 ly), same design rule Across Country
+   used ("no leg ever unreachable on a full tank alone"). */
+const SHIP = {
+  id:'new_dawn', name:'New Dawn', class:'Frigate', hull_designation:'IASF-01',
+  tagline:"The original plan. Room for a crew and everything they'll need, if it can be found along the way.",
+  maxFuel: 75,
+  efficiency: 0.02,        // ly per fuel unit -> 75 fuel = 1.5 ly range
+  maxPower: 100,
+  powerPerEnergy: 0.03,    // ly per power point -> 100 power = 3.0 ly range
+  maxHull: 32,
+  maxShields: 10,
+  weapons: 5,   // ported from Underpass's baseline atk:5 - no equipment system yet, base ship stat only
+};
+
+/* ---------------- SHIP SLOTS ---------------- */
+const CREW_SLOTS = ['galley','quarters','medbay','recreation','storage','decoration'];
+const SYSTEM_SLOTS = ['propulsion','shields','weapons'];
+const ALL_SLOTS = [...CREW_SLOTS, ...SYSTEM_SLOTS];
+const SLOT_LABEL = {
+  galley:'Galley', quarters:'Crew Quarters', medbay:'Medbay', recreation:'Rec Room',
+  storage:'Cargo Hold', decoration:'Observation Deck',
+  propulsion:'Propulsion', shields:'Deflector Array', weapons:'Weapons Battery',
+};
+
+/* ---------------- ITEMS (placeholder economy, unused until trading pass) ---------------- */
+const ITEMS = {
+  // --- Weapons (ship-vs-ship damage) --- poor/common/uncommon buyable at stations;
+  // rare/epic reserved as combat-only salvage finds, never sold.
+  weap_p:   {name:'Improvised Point-Defence',   slot:'weapons', quality:'poor',      power:2, desc:'Fires. Mostly.'},
+  weap_c:   {name:'Standard Pulse Battery',     slot:'weapons', quality:'common',    power:4, desc:'IASF-issue sidearm for the ship.'},
+  weap_u:   {name:'Twin-Linked Pulse Array',    slot:'weapons', quality:'uncommon',  power:7, desc:'Two barrels, one trigger.'},
+  weap_r:   {name:'Raider Beam Cutter',         slot:'weapons', quality:'rare',      power:11, desc:'Recovered from a raider hulk. Runs hot. Hits hard.'},
+  weap_e:   {name:'Prototype Lance Emitter',    slot:'weapons', quality:'epic',      power:16, desc:"Not IASF spec. Nobody's asked where it came from."},
+
+  // --- Propulsion (cruise speed) ---
+  prop_p:   {name:'Patched Thruster Housing',   slot:'propulsion', quality:'poor',     power:2, desc:'Vibrates more than it should.'},
+  prop_c:   {name:'Standard Ion Drive',         slot:'propulsion', quality:'common',   power:4, desc:'Reliable, unremarkable.'},
+  prop_u:   {name:'Tuned Ion Drive',            slot:'propulsion', quality:'uncommon', power:7, desc:'A few percent more thrust than spec allows for.'},
+  prop_r:   {name:'Raider Drive Coil',          slot:'propulsion', quality:'rare',     power:11, desc:"Whoever built this wasn't worried about fuel economy."},
+  prop_e:   {name:'Prototype Fold Injector',    slot:'propulsion', quality:'epic',     power:16, desc:'Shaves real time off the crossing. IASF engineering would like it back.'},
+
+  // --- Shields (max shield capacity - the Star Trek deflector layer) ---
+  shield_p: {name:'Salvaged Deflector Coil',    slot:'shields', quality:'poor',      power:2, desc:'Barely holds a charge. Better than bare hull.'},
+  shield_c: {name:'Standard Deflector Array',   slot:'shields', quality:'common',    power:4, desc:'IASF-issue. Does the job.'},
+  shield_u: {name:'Reinforced Deflector Grid',  slot:'shields', quality:'uncommon',  power:7, desc:'Noticeably steadier under fire.'},
+  shield_r: {name:'Raider Ablative Mesh',       slot:'shields', quality:'rare',      power:11, desc:'Ugly. Effective.'},
+  shield_e: {name:'Prototype Phase Barrier',    slot:'shields', quality:'epic',      power:16, desc:"Deflects more than it should be able to. IASF hasn't cleared this for use."},
+
+  // --- Crew amenities (ship-wide morale, bought at stations only, never looted) ---
+  quarters_p:  {name:'Fold-Out Bunk',           slot:'quarters',   quality:'poor',   comfort:2, desc:'A bunk is a bunk.'},
+  quarters_c:  {name:'Standard Bunk Module',    slot:'quarters',   quality:'common', comfort:4, desc:'Actually fits a mattress.'},
+  galley_p:    {name:'Ration Dispenser',        slot:'galley',     quality:'poor',   comfort:2, desc:'Food, technically.'},
+  galley_c:    {name:'Standard Ration Printer', slot:'galley',     quality:'common', comfort:4, desc:'Food, and it tastes like something.'},
+  medbay_p:    {name:'Field Med Kit Rack',      slot:'medbay',     quality:'poor',   comfort:2, desc:'The basics, within reach.'},
+  medbay_c:    {name:'Standard Medbay Fit-Out', slot:'medbay',     quality:'common', comfort:4, desc:'Reyes finally has a proper exam table.'},
+  rec_p:       {name:'Card Deck & Dartboard',   slot:'recreation', quality:'poor',   comfort:2, desc:'Low-tech. Works anyway.'},
+  rec_c:       {name:'Shared Rec Console',      slot:'recreation', quality:'common', comfort:4, desc:"Something to do that isn't staring at the void."},
+  storage_p:   {name:'Modular Cargo Netting',   slot:'storage',    quality:'poor',   comfort:1, desc:'Stops things drifting into the corridor.'},
+  storage_c:   {name:'Standard Cargo Racking',  slot:'storage',    quality:'common', comfort:2, desc:'Everything has a place now.'},
+  decoration_p:{name:'Salvaged Star Chart',     slot:'decoration', quality:'poor',   comfort:1, desc:'Pinned up in the mess. Somewhere on it is home.'},
+  decoration_c:{name:'Observation Deck Fit-Out',slot:'decoration', quality:'common', comfort:3, desc:'A window worth looking out of.'},
+
+  // --- Consumables (used via the Systems button mid-combat) ---
+  repair_kit: {name:'Field Repair Kit', type:'consumable', quality:'common', heal:8, desc:"Patches a hull breach enough to keep fighting."},
+};
+
+// Station stock: what's actually purchasable at a friendly station. Rare/epic
+// items are combat-loot-only (see LOOT_TABLE) - a shop can't buy its way to
+// the good stuff, which is the point.
+const STATION_STOCK = [
+  'weap_p','weap_c','weap_u', 'prop_p','prop_c','prop_u', 'shield_p','shield_c','shield_u',
+  'quarters_p','quarters_c', 'galley_p','galley_c', 'medbay_p','medbay_c',
+  'rec_p','rec_c', 'storage_p','storage_c', 'decoration_p','decoration_c',
+  'repair_kit',
+];
+
+// Combat loot: ship-system components only (harvested from enemy hulls, per
+// the brief) - amenities are never found floating in wreckage. Tier of drop
+// is keyed to the enemy's own salvage tier, with a chance of the tier above.
+const LOOT_TABLE = {
+  poor:     {slots:['weap_p','prop_p','shield_p','weap_c','prop_c','shield_c'], dropChance:0.5},
+  uncommon: {slots:['weap_c','prop_c','shield_c','weap_u','prop_u','shield_u','weap_r','prop_r','shield_r'], dropChance:0.6},
+};
+
+/* ---------------- RAW MATERIALS & SYNTHESIS ----------------
+   Self-sufficiency loop: gather raw materials (surveying waypoints,
+   like Across Country's POI exploration, or harvested alongside
+   finished-item salvage from combat) and synthesize them into ship
+   components yourself, no station required. Quartermaster's domain.
+   Rare/epic components stay combat-loot-only either way - synthesis
+   only covers the poor/common/uncommon tiers, same ceiling the shop
+   has, just reachable without ever docking. */
+const MATERIAL_TYPES = ['alloy', 'crystal', 'isotopes'];
+const MATERIAL_LABEL = {alloy:'Alloy Plate', crystal:'Focusing Crystal', isotopes:'Refined Isotopes'};
+const SURVEY_POWER_COST = 12;
+
+const RECIPES = {
+  prop_p:   {alloy:3},
+  prop_c:   {alloy:5, crystal:1},
+  prop_u:   {alloy:8, crystal:3},
+  shield_p: {crystal:3},
+  shield_c: {crystal:5, alloy:1},
+  shield_u: {crystal:8, alloy:3},
+  weap_p:   {isotopes:3},
+  weap_c:   {isotopes:5, alloy:1},
+  weap_u:   {isotopes:8, crystal:3},
+};
+
+function canAfford(cost){
+  return Object.entries(cost).every(([mat, qty]) => (state.materials[mat] || 0) >= qty);
+}
+function surveyForMaterials(){
+  if(!state.atStation || state.arrived || C.active) return;
+  if(state.power < SURVEY_POWER_COST){ pushLog('Not enough reactor charge to run a survey.', 'l-warn'); return; }
+  state.power -= SURVEY_POWER_COST;
+  if(Math.random() < 0.12){
+    pushLog('Survey team comes back empty-handed. Nothing usable in range.', 'l-event');
+    render();
+    return;
+  }
+  const type = MATERIAL_TYPES[Math.floor(Math.random() * MATERIAL_TYPES.length)];
+  const qty = 1 + Math.floor(Math.random() * 3);
+  state.materials[type] = (state.materials[type] || 0) + qty;
+  pushLog(`Survey team recovers ${qty} unit${qty>1?'s':''} of ${MATERIAL_LABEL[type].toLowerCase()}.`, 'l-event');
+  render();
+}
+function synthesizeItem(itemId){
+  const cost = RECIPES[itemId];
+  const item = ITEMS[itemId];
+  if(!cost || !item) return;
+  if(!canAfford(cost)){ pushLog(`Not enough raw materials to synthesize ${item.name}.`, 'l-warn'); render(); return; }
+  Object.entries(cost).forEach(([mat, qty]) => { state.materials[mat] -= qty; });
+  state.inventory.push(itemId);
+  pushLog(`Quartermaster's synthesizer fabricates a ${item.name}. Stowed in the hold.`, 'l-event');
+  render();
+}
+
+/* ---------------- WAYPOINT INVESTIGATION (off-route/optional content) ----------------
+   Analogous to Across Country's off-route POI exploration (explore/explorePOI) -
+   a one-time optional side action reachable by spending resources, without being
+   required to advance the route. Across Cosmos's route is a fixed line rather than
+   a road with actual side-turns, so the equivalent slot for "optional side content"
+   is a waypoint that doesn't already have a scripted STORY node (see the
+   WAYPOINT_STORY gap noted below) - Investigate offers a risk/reward roll there
+   instead of just the ambient flavor line, same shape Across Country's POIs have. */
+const INVESTIGATE_POWER_COST = 10;
+function investigateWaypoint(){
+  const stop = state.currentStop;
+  if(!state.atStation || state.arrived || C.active || narr.active) return;
+  if(!stop || stop.type === 'friendly_station') return;
+  if(WAYPOINT_STORY[stop.name] || state.flags['investigated_' + stop.name]) return;
+  if(state.power < INVESTIGATE_POWER_COST){ pushLog('Not enough reactor charge to send a team across.', 'l-warn'); render(); return; }
+  state.power -= INVESTIGATE_POWER_COST;
+  state.flags['investigated_' + stop.name] = true;
+
+  const roll = Math.random();
+  if(roll < 0.15){
+    pushLog(`Investigating ${stop.name}: sensors flare - something's still powered down there, and it's not friendly.`, 'l-warn');
+    render();
+    startCombat(Math.random() < 0.5 ? 'scout_drone' : 'raider_ship');
+    return;
+  } else if(roll < 0.35){
+    const gain = 15 + Math.floor(Math.random() * 16);
+    state.salvage += gain;
+    pushLog(`Investigating ${stop.name}: salvage team strips ${gain} units of usable material before moving on.`, 'l-event');
+  } else if(roll < 0.55){
+    const type = MATERIAL_TYPES[Math.floor(Math.random() * MATERIAL_TYPES.length)];
+    const qty = 2 + Math.floor(Math.random() * 4);
+    state.materials[type] = (state.materials[type] || 0) + qty;
+    pushLog(`Investigating ${stop.name}: recovers ${qty} unit${qty>1?'s':''} of ${MATERIAL_LABEL[type].toLowerCase()}, more than a routine survey usually turns up.`, 'l-event');
+  } else if(roll < 0.65){
+    CREW_IDS.forEach(id => { state.crew[id].morale = Math.min(100, state.crew[id].morale + 4); });
+    pushLog(`Investigating ${stop.name}: the team finds something personal left behind. Nobody says much about it, but it settles the whole crew.`, 'l-crew');
+  } else {
+    pushLog(`Investigating ${stop.name}: quiet. Whatever was here is long gone.`, 'l-cruise');
+  }
+  render();
+}
+
+/* ---------------- CREW ----------------
+   Reworked into distinct functional roles, each with their own UI pane:
+   Pilot (navigation/momentum), Engineer (defense + power routing),
+   Weapons Officer (offense), Quartermaster (inventory/synthesis - no
+   duty station of her own, since her job isn't "boost a stat," it's
+   running the synthesizer and the stores, always available). */
+const CREW_ROSTER = {
+  chen:   {id:'chen',   name:'Lt. Aroha Chen',  role:'Pilot',           dutyBoost:'propulsion', baseMorale:70},
+  okafor: {id:'okafor', name:'Chief Sam Okafor',role:'Engineer',        dutyBoost:'shields',    baseMorale:70},
+  reyes:  {id:'reyes',  name:'Dr. Mia Reyes',   role:'Quartermaster',   dutyBoost:null,          baseMorale:70},
+  tane:   {id:'tane',   name:'Ens. Wiremu Tane',role:'Weapons Officer', dutyBoost:'weapons',    baseMorale:70},
+};
+const CREW_IDS = Object.keys(CREW_ROSTER);
+
+/* ---------------- CREW DUTY STATIONS ----------------
+   One crew member per station. A crew member assigned to their own
+   `dutyBoost` station gets the full bonus; assigned elsewhere gets
+   a smaller "generalist" bonus - a light strategic choice rather
+   than a hard requirement. Quartermaster has no station - her pane
+   is always active regardless of assignment. */
+const DUTY_STATIONS = ['propulsion','shields','weapons'];
+const DUTY_LABEL = {propulsion:'Helm', shields:'Shields', weapons:'Weapons'};
+
+function getDutyAssignee(station){
+  return CREW_IDS.find(id => state.crew[id].assigned === station) || null;
+}
+function dutyBonusLevel(station){
+  const crewId = getDutyAssignee(station);
+  if(!crewId) return 'none';
+  return CREW_ROSTER[crewId].dutyBoost === station ? 'full' : 'partial';
+}
+function assignCrew(crewId, station){
+  if(!CREW_ROSTER[crewId].dutyBoost && CREW_ROSTER[crewId].role === 'Quartermaster') return; // no station to assign
+  // one crew per station - bumping someone into an occupied station clears the previous holder
+  CREW_IDS.forEach(id => { if(id !== crewId && state.crew[id].assigned === station) state.crew[id].assigned = null; });
+  state.crew[crewId].assigned = (state.crew[crewId].assigned === station) ? null : station;
+  render();
+}
+
+/* ---------------- POWER ROUTING ----------------
+   Engineer's signature control: reactor power split three ways
+   across offense/defense/momentum, summing to 100. Moving power
+   into a channel above the 33/33/34 baseline boosts it, moving
+   below costs it - a real trade-off, not a free bonus. */
+let powerRouting = {weapons:34, shields:33, propulsion:33};
+function routingMultiplier(channel){
+  return 0.7 + (powerRouting[channel] / 100) * 0.6; // 0 -> 0.70x, 100 -> 1.30x
+}
+function adjustPowerRouting(gainChannel){
+  const others = Object.keys(powerRouting).filter(c => c !== gainChannel);
+  if(powerRouting[gainChannel] >= 80) return; // leave at least 20 total split across the other two
+  powerRouting[gainChannel] += 10;
+  // pull the 10 evenly off the other two, whichever has more gives first
+  let toRemove = 10;
+  others.sort((a,b) => powerRouting[b] - powerRouting[a]);
+  for(const c of others){
+    const take = Math.min(toRemove, Math.max(0, powerRouting[c] - 0));
+    powerRouting[c] -= take;
+    toRemove -= take;
+  }
+  render();
+}
+
+/* ---------------- DUTY-STATION + EQUIPMENT + ROUTING EFFECTS ----------------
+   Three layers stack: base ship stat, duty-station assignment bonus,
+   equipped-gear bonus - then the Engineer's power routing multiplies
+   the total. Damage control (hull repair) now comes from routing
+   power to defense rather than a dedicated medbay station. */
+function equippedPower(slot){
+  const itemId = state.equipped[slot];
+  if(!itemId) return 0;
+  const item = ITEMS[itemId];
+  return (item && item.power) || 0;
+}
+function effectiveCruiseLyPerHour(){
+  const lvl = dutyBonusLevel('propulsion');
+  const mult = lvl === 'full' ? 1.15 : lvl === 'partial' ? 1.05 : 1.0;
+  const gearBonus = equippedPower('propulsion') * 0.003;
+  return (CRUISE_LY_PER_HOUR * mult + gearBonus) * routingMultiplier('propulsion');
+}
+function effectiveWeapons(){
+  const lvl = dutyBonusLevel('weapons');
+  const base = SHIP.weapons + equippedPower('weapons') + (lvl === 'full' ? 2 : lvl === 'partial' ? 1 : 0);
+  return Math.round(base * routingMultiplier('weapons'));
+}
+function effectiveMaxShields(){
+  const base = SHIP.maxShields + equippedPower('shields');
+  return Math.round(base * routingMultiplier('shields'));
+}
+function dailyShieldRegen(){
+  const lvl = dutyBonusLevel('shields');
+  return lvl === 'full' ? 3 : lvl === 'partial' ? 1 : 0;
+}
+function dailyHullRepair(){
+  // Damage control is a byproduct of the Engineer running power heavy
+  // toward defense, not a separate station - fits "Engineer manages
+  // defensive shields" as one combined responsibility.
+  if(powerRouting.shields >= 50) return 2;
+  if(powerRouting.shields >= 40) return 1;
+  return 0;
+}
+function shipComfortBonus(){
+  // Sum of `comfort` across every equipped crew-slot item, translated into a
+  // small flat daily morale bump for the whole crew (ship-wide amenities,
+  // not assigned to one person - this is the payoff for the interior-slots
+  // -> crew-quarters mapping in the design doc).
+  let total = 0;
+  CREW_SLOTS.forEach(slot => {
+    const itemId = state.equipped[slot];
+    if(itemId && ITEMS[itemId] && ITEMS[itemId].comfort) total += ITEMS[itemId].comfort;
+  });
+  return Math.floor(total / 6); // 6 comfort points = +1 morale/day, tuned to feel earned, not free
+}
+
+
+/* ---------------- CREW RELATIONSHIP BEATS ----------------
+   Analogous to Across Country's MEMORIES array, scaled from one
+   traveller's private milestones to four crew members' individual
+   threads. Each fires once. Triggers are deliberately simple
+   (day count, phase entered, kill count, own morale threshold) so
+   the beats stay legible rather than turning into a second economy. */
+const CREW_BEATS = [
+  {id:'chen_1', crewId:'chen', trig:{type:'day', value:2},
+    text:"Chen: \"Systems check clean across the board. Feels good being back in real space instead of a simulator.\""},
+  {id:'okafor_1', crewId:'okafor', trig:{type:'phase', value:'longDark'},
+    text:"Okafor spends an extra hour re-checking shield relays that don't need checking. Nobody says anything about it."},
+  {id:'reyes_1', crewId:'reyes', trig:{type:'day', value:3},
+    text:"Reyes runs everyone's second physical of the trip. \"Baseline's baseline,\" she says, unconvincingly."},
+  {id:'tane_1', crewId:'tane', trig:{type:'phase', value:'departure'},
+    text:"Tane has already logged four hypothetical biosignatures from sensor noise. Chen tells him to pace himself."},
+  {id:'chen_2', crewId:'chen', trig:{type:'moraleLow', value:40},
+    text:"Chen goes quiet on the comms for a full watch. When she comes back on, she doesn't explain, and nobody asks."},
+  {id:'okafor_2', crewId:'okafor', trig:{type:'kills', value:1},
+    text:"Okafor logs the damage report from the fight in more detail than it needs. Better than thinking about it."},
+  {id:'reyes_2', crewId:'reyes', trig:{type:'moraleLow', value:35},
+    text:"Reyes admits, off the record, that she's run out of good news to give people."},
+  {id:'tane_2', crewId:'tane', trig:{type:'phase', value:'approach'},
+    text:"Tane hasn't slept. The readings from the target world are finally good enough to lose sleep over."},
+  {id:'chen_3', crewId:'chen', trig:{type:'phase', value:'approach'},
+    text:"Chen runs the approach vectors twice more than the computer needs her to. \"Just want it right,\" she says."},
+  {id:'okafor_3', crewId:'okafor', trig:{type:'moraleHigh', value:85},
+    text:"Okafor actually whistles while running a diagnostic. First time anyone's heard it this whole trip."},
+];
+function checkCrewBeats(){
+  const phaseId = journeyPhase(state.lyTravelled).id;
+  CREW_BEATS.forEach(b => {
+    if(state.unlockedBeats.includes(b.id)) return;
+    const t = b.trig;
+    let fire = false;
+    if(t.type === 'day' && state.day >= t.value) fire = true;
+    else if(t.type === 'phase' && phaseId === t.value) fire = true;
+    else if(t.type === 'kills' && state.kills >= t.value) fire = true;
+    else if(t.type === 'moraleLow' && state.crew[b.crewId].morale <= t.value) fire = true;
+    else if(t.type === 'moraleHigh' && state.crew[b.crewId].morale >= t.value) fire = true;
+    if(fire){
+      state.unlockedBeats.push(b.id);
+      pushLog(b.text, 'l-crew');
+    }
+  });
+}
+
+/* ---------------- CAPTAIN'S LOG / NARRATIVE NODES ----------------
+   Ported from Underpass's STORY/renderNode/renderChoices/typewrite
+   system. Nodes are keyed by id, shown one at a time in #narrPanel,
+   and blocked out from travel controls while active (same pattern
+   as the combat panel). Each node fires its one-time `effects`
+   exactly once and gets logged to the Captain's Log exactly once,
+   the same flag-gating Underpass used for gold/items on story nodes.
+
+   NOTE: openNarrative() queues rather than overwrites if called
+   while a node is already showing, so a phase-transition node and
+   a waypoint-arrival node can never silently clobber each other
+   even if a future waypoint/phase-boundary tweak makes them land
+   on the same driveStep() call. */
+const STORY = {
+  departure_intro: {
+    title:'Undocking',
+    text:"New Dawn clears the Mars Relay mooring clamps under her own power for the first time. Twenty years, if the numbers hold. Nobody on the bridge says that number out loud.",
+    choices:[{text:'Log it and get underway.', next:null}],
+  },
+  first_derelict: {
+    title:'Deep Relay Buoy 7',
+    text:"The buoy's running lights are dead, but the hull's intact. Old IASF registry markings, decades out of date. Something drifted this far out and never made it back.",
+    choices:[
+      {text:'Send a salvage team aboard.', next:'first_derelict_salvage'},
+      {text:"Log the registry and move on. Not worth the risk.", next:'first_derelict_pass'},
+    ],
+  },
+  first_derelict_salvage: {
+    title:'Salvage Team Aboard',
+    text:"Okafor leads the team over. They come back forty minutes later with a crate of intact components and a log entry nobody wants to read out loud. The buoy's last crew reported a contact, then nothing.",
+    effects:{salvage:20, flags:{derelict_salvaged:true}},
+    choices:[{text:'File the report and continue on.', next:null}],
+  },
+  first_derelict_pass: {
+    title:'Logged and Moved On',
+    text:"Chen logs the registry number for IASF records and pushes New Dawn back onto her course. Whatever happened here, it's not their story to finish.",
+    choices:[{text:'Continue.', next:null}],
+  },
+  the_anomaly: {
+    title:'Unnamed Anomaly',
+    text:"Sensors can't agree on what they're looking at. Gravimetric readings that don't add up, and something that might once have been a hull.",
+    choices:[
+      {text:'Take New Dawn in for a closer look.', next:'anomaly_close'},
+      {text:'Hold distance and log the readings.', next:'anomaly_hold'},
+    ],
+  },
+  anomaly_close: {
+    title:'Closer Look',
+    text:"New Dawn eases past the debris field. Whatever tore this apart, it wasn't age. Point-defence turrets flicker online on their own; the wreck isn't as dead as it looked.",
+    combat:'raider_ship',
+    choices:[{text:'Weapons free.', next:null}],
+  },
+  anomaly_hold: {
+    title:'Holding Distance',
+    text:"Tane logs three hours of readings the science team back home will spend years parsing properly. Cautious, but nothing gained today beyond data.",
+    effects:{crewMorale:{tane:5}},
+    choices:[{text:'Continue.', next:null}],
+  },
+  long_dark_intro: {
+    title:'Entering the Long Dark',
+    text:"Home comms drop to a faint, delayed trickle, then to nothing at all. The crew feels the silence settle in. There is a very long way between here and anyone who could help.",
+    choices:[{text:'Hold course.', next:null}],
+  },
+  approach_signal: {
+    title:'First Contact',
+    text:"A signal comes back clean where before there was only static, artificial, structured, and not IASF. Something out there already knows New Dawn is coming.",
+    choices:[
+      {text:'Open a channel.', next:'approach_signal_open'},
+      {text:'Stay silent and hold approach vector.', next:'approach_signal_silent'},
+    ],
+  },
+  approach_signal_open: {
+    title:'Channel Open',
+    text:"No reply comes back in any language the ship's computer recognises. But the signal's cadence changes, subtly, like it noticed. The bridge holds its breath.",
+    effects:{flags:{first_contact_open:true}},
+    choices:[{text:'Continue.', next:null}],
+  },
+  approach_signal_silent: {
+    title:'Holding Silent',
+    text:"New Dawn keeps running dark, vector locked. Whatever's out there doesn't call again. Reyes says what everyone's thinking: they know we're here either way.",
+    effects:{flags:{first_contact_silent:true}},
+    choices:[{text:'Continue.', next:null}],
+  },
+  arrival_climax: {
+    title:'Target World Orbit',
+    text:"Twenty years compressed into a viewport. The target world turns beneath New Dawn, blue and improbable, exactly where the numbers said it would be. Every gauge on the bridge reads nominal. Nobody moves for a moment; it feels wrong to be the one who breaks it.",
+    choices:[{text:'Log the arrival.', next:null}],
+  },
+  heliopause_gate: {
+    title:'Heliopause Marker',
+    text:"This is the edge of the system. Chen runs the numbers twice: the stock drive gets New Dawn this far and no further. Whatever gets fitted before departure is what carries the ship the rest of the way. Okafor's already talking about a synthesizer run.",
+    choices:[{text:'Hold position and take stock.', next:null}],
+  },
+};
+
+// Maps waypoint names to a full narrative node - not every waypoint has one
+// yet (Deep Relay Buoy 12, Centauri Outer Debris still just get the ambient
+// one-liner from arriveAtWaypoint). More of these land with the content pass.
+const WAYPOINT_STORY = {
+  'Deep Relay Buoy 7': 'first_derelict',
+  'Unnamed Anomaly': 'the_anomaly',
+  'Heliopause Marker': 'heliopause_gate',
+};
+
+function typewrite(text, cb){
+  const out = document.getElementById('narrText');
+  if(twTimer){ clearInterval(twTimer); twTimer = null; }
+  out.textContent = '';
+  narrFullText = text;
+  narrTypewriteCb = cb;
+  let i = 0;
+  const speed = 14;
+  twTimer = setInterval(() => {
+    if(i < text.length){ out.textContent += text[i]; i++; }
+    else {
+      clearInterval(twTimer); twTimer = null;
+      const cb2 = narrTypewriteCb; narrTypewriteCb = null;
+      if(cb2) cb2();
+    }
+  }, speed);
+}
+function skipTypewrite(){
+  if(!twTimer && !narrTypewriteCb) return;
+  if(twTimer){ clearInterval(twTimer); twTimer = null; }
+  document.getElementById('narrText').textContent = narrFullText;
+  const cb = narrTypewriteCb; narrTypewriteCb = null;
+  if(cb) cb();
+}
+
+function applyNodeEffectsOnce(nodeId, node){
+  if(state.flags['applied_' + nodeId]) return;
+  state.flags['applied_' + nodeId] = true;
+  const fx = node.effects;
+  if(!fx) return;
+  if(fx.salvage) state.salvage += fx.salvage;
+  if(fx.flags) Object.assign(state.flags, fx.flags);
+  if(fx.crewMorale){
+    Object.entries(fx.crewMorale).forEach(([id, delta]) => {
+      if(state.crew[id]) state.crew[id].morale = Math.max(0, Math.min(100, state.crew[id].morale + delta));
+    });
+  }
+}
+
+function openNarrative(nodeId){
+  if(!nodeId) return;
+  const node = STORY[nodeId];
+  if(!node) return;
+  if(narr.active){ narr.queue.push(nodeId); return; }
+
+  narr.active = true;
+  narr.nodeId = nodeId;
+  applyNodeEffectsOnce(nodeId, node);
+
+  if(!state.flags['logged_' + nodeId]){
+    state.flags['logged_' + nodeId] = true;
+    state.captainsLog.push({title: node.title, text: node.text});
+  }
+
+  document.getElementById('narrPanel').style.display = 'block';
+  document.getElementById('travelControls').style.display = 'none';
+  document.getElementById('narrTitle').textContent = node.title;
+  document.getElementById('narrChoices').innerHTML = '';
+  typewrite(node.text, () => renderNarrativeChoices(node));
+  render();
+}
+
+function renderNarrativeChoices(node){
+  const d = document.getElementById('narrChoices');
+  d.innerHTML = '';
+  (node.choices || []).forEach(ch => {
+    const b = document.createElement('button');
+    b.textContent = ch.text;
+    b.onclick = () => handleNarrativeChoice(node, ch);
+    d.appendChild(b);
+  });
+}
+
+function handleNarrativeChoice(node, ch){
+  if(node.combat){
+    closeNarrative();
+    startCombat(node.combat);
+    return;
+  }
+  if(ch.next){
+    // Direct in-flow transition to the next node in the same branch - not a
+    // competing trigger, so it replaces the current node rather than queueing
+    // behind it (queueing is only for externally-triggered opens).
+    narr.active = false;
+    openNarrative(ch.next);
+  } else {
+    closeNarrative();
+  }
+}
+
+function drainNarrativeQueue(){
+  if(!narr.active && !C.active && narr.queue.length){
+    openNarrative(narr.queue.shift());
+  }
+}
+
+function closeNarrative(){
+  narr.active = false;
+  narr.nodeId = null;
+  document.getElementById('narrPanel').style.display = 'none';
+  if(narr.queue.length && !C.active){
+    const nextId = narr.queue.shift();
+    openNarrative(nextId);
+    return;
+  }
+  if(state.arrived){
+    showEndPanel();
+    return;
+  }
+  document.getElementById('travelControls').style.display = C.active ? 'none' : 'block';
+  checkCrewBeats();
+  render();
+}
+
+/* ---------------- END OF VOYAGE ----------------
+   Analogous to Across Country's renderShareCard() / Underpass's endVictory() -
+   the payoff screen the old build never had (arriving just disabled the Drive
+   button forever). Reachable both from closeNarrative() right after the
+   arrival_climax node, and from render()'s own arrived-check so a page reload
+   after finishing lands back here too, instead of the old dead-end screen. */
+function showEndPanel(){
+  document.getElementById('narrPanel').style.display = 'none';
+  document.getElementById('combatPanel').style.display = 'none';
+  document.getElementById('travelControls').style.display = 'none';
+  const beatsSeen = state.unlockedBeats.length;
+  document.getElementById('endStats').innerHTML = `
+    <div class="stat"><span>Days underway</span><span>${state.day}</span></div>
+    <div class="stat"><span>Contacts destroyed</span><span>${state.kills}</span></div>
+    <div class="stat"><span>Salvage on hand</span><span>${state.salvage}</span></div>
+    <div class="stat"><span>Crew morale</span><span>${avgMorale()}/100</span></div>
+    <div class="stat"><span>Crew moments logged</span><span>${beatsSeen} / ${CREW_BEATS.length}</span></div>
+  `;
+  document.getElementById('endPanel').style.display = 'block';
+}
+
+function toggleLog(){
+  const panel = document.getElementById('logPanel');
+  const showing = panel.style.display !== 'none';
+  panel.style.display = showing ? 'none' : 'block';
+  if(!showing){
+    panel.innerHTML = state.captainsLog.map(e =>
+      `<div class="logEntry"><h3>${e.title}</h3><p>${e.text}</p></div>`
+    ).join('') || '<div class="logEntry"><p>No entries yet.</p></div>';
+  }
+}
+
+/* ---------------- ENEMIES ----------------
+   hull/weapons/shields ported from Underpass's hp/atk/def shape,
+   reflavoured to ship-vs-ship scale. `shields` is a real absorb
+   pool here (Star Trek-style), not a flat defence stat - damage
+   depletes it before touching hull, on both sides of a fight. */
+const ENEMIES = {
+  scout_drone: {name:'Unidentified Scout Drone', hull:12, weapons:4, shields:1, salvage:'poor', desc:'Small, fast, probably just curious. Probably.'},
+  raider_ship: {name:'Raider-class Vessel', hull:26, weapons:7, shields:3, salvage:'uncommon', desc:'Not curious. Armed.'},
+};
+
+/* ---------------- ENCOUNTERS ----------------
+   Scanning for hostile contacts is player-triggered, only available
+   while docked/holding at a waypoint - never a forced random event
+   mid-cruise. Odds and difficulty shift with journey phase, same
+   variable driving the tonal arc everywhere else. */
+const ENCOUNTER_TABLE = {
+  departure: {chance:0.25, pool:[{key:'scout_drone', w:10}]},
+  longDark:  {chance:0.55, pool:[{key:'scout_drone', w:4}, {key:'raider_ship', w:6}]},
+  approach:  {chance:0.30, pool:[{key:'scout_drone', w:5}, {key:'raider_ship', w:5}]},
+  arrival:   {chance:0, pool:[]},
+};
+const SCAN_POWER_COST = 15;
+
+/* ---------------- ROUTE / WAYPOINTS ---------------- */
+const ROUTE = [
+  {name:'Mars Relay',            ly:0.00, type:'friendly_station'},
+  {name:'Outer Belt Station',    ly:0.30, type:'friendly_station'},
+  {name:'Heliopause Marker',     ly:0.65, type:'waypoint'},
+  {name:'Deep Relay Buoy 7',     ly:1.40, type:'derelict'},
+  {name:'Unnamed Anomaly',       ly:2.20, type:'anomaly'},
+  {name:'Deep Relay Buoy 12',    ly:3.00, type:'derelict'},
+  {name:'Centauri Outer Debris', ly:3.90, type:'waypoint'},
+  {name:'Target World Orbit',    ly:4.37, type:'arrival'},
+];
+
+// Progression gate: the stock drive can get New Dawn to the edge of the
+// system and no further. Deep-space transit needs a propulsion component
+// actually fitted, not just duty-station assignment - forces at least one
+// pass through combat, surveying, or the shop before the crossing proper
+// begins. Multiple viable paths in (buy at Outer Belt, survey + synthesize,
+// or salvage one off a kill), never a single hard requirement.
+const GATE_WAYPOINT = 'Heliopause Marker';
+const GATE_MIN_PROPULSION_POWER = 4;
+
+function getNextStopIndex(ly){
+  const d = Math.min(Math.max(ly,0), JOURNEY_TOTAL_LY - 0.0001);
+  let idx = ROUTE.findIndex(r => d < r.ly);
+  return idx === -1 ? ROUTE.length - 1 : idx;
+}
+function getNextStop(ly){ return ROUTE[getNextStopIndex(ly)]; }
+function getLastStop(ly){
+  const idx = getNextStopIndex(ly);
+  return idx > 0 ? ROUTE[idx-1] : null;
+}
+
+/* ---------------- TRAVEL LOOP CONSTANTS ----------------
+   Same ergonomics as Across Country: a working day runs 6am-7pm,
+   each "Drive on" press covers a fixed chunk of hours. Cruise speed
+   is picked so the full 4.37 ly route takes a comparable number of
+   ship-days to Across Country's road trip once stops are included. */
+const CRUISE_LY_PER_HOUR = 0.04;
+const DAY_START_HOUR = 6;
+const DAY_END_HOUR = 19;
+const HOUR_STEP = 2;
+const NAP_HOUR_COST = 2;
+const NAP_POWER_RESTORE = 25;
+
+/* ---------------- STATE ----------------
+   Factory rather than a bare object literal so "New Voyage" (see PERSISTENCE
+   below) can rebuild a clean state without duplicating this shape. */
+function newVoyageState(){
+  return {
+    day: 1, hour: DAY_START_HOUR,
+    lyTravelled: 0,
+    fuel: SHIP.maxFuel,
+    power: SHIP.maxPower,
+    hull: SHIP.maxHull,
+    shields: SHIP.maxShields, // (equipment doesn't exist yet at init time; effectiveMaxShields() governs from here on)
+    visitedStops: [],
+    arrived: false,
+    atStation: false,
+    currentStop: null,
+    log: [],
+    crew: Object.fromEntries(CREW_IDS.map(id => [id, {morale: CREW_ROSTER[id].baseMorale, assigned: null}])),
+    lastPhaseId: 'departure',
+    salvage: 0,
+    kills: 0,
+    inventory: [], // consumables + unequipped gear - populated by the trading/upgrade pass
+    equipped: {},  // slot -> itemId
+    materials: {alloy:0, crystal:0, isotopes:0},
+    unlockedBeats: [],
+    flags: {},
+    captainsLog: [],
+  };
+}
+let state = newVoyageState();
+
+/* ---------------- NARRATIVE STATE ----------------
+   Analogous to Underpass's `C` / `SCAV` module state objects. */
+let narr = {active:false, nodeId:null, queue:[]};
+let twTimer = null;
+let narrFullText = '';
+let narrTypewriteCb = null;
+
+/* ---------------- COMBAT STATE ----------------
+   Analogous to Underpass's `C` combat object. */
+let C = {active:false, enemyKey:null, enemy:null, enemyHull:0, enemyShields:0, turn:0, combo:0,
+         enemyEffects:[], tempWeapons:0, tempWeaponsTurns:0};
+
+/* ---------------- PERSISTENCE ----------------
+   Same window.storage-with-localStorage-fallback pattern Across Country uses
+   (falls back cleanly whether this page is opened directly from disk or run
+   inside a host that provides window.storage). Autosaves from render() itself
+   rather than at each call site - simpler than Across Country's per-action
+   saveGame() calls, since every state-mutating function in this file already
+   funnels through render(). Mid-scene UI state (an open narrative node, an
+   active fight) is deliberately NOT persisted - only durable ship/crew/journey
+   progress - so a reload during a story beat or a fight resumes at the main
+   travel screen with whatever outcome already landed, not mid-animation. */
+if(!window.storage){
+  window.storage = {
+    async get(key){ const v = localStorage.getItem(key); return v===null ? null : {value:v}; },
+    async set(key, value){ localStorage.setItem(key, value); },
+    async delete(key){ localStorage.removeItem(key); }
+  };
+}
+const SAVE_KEY = 'across-cosmos-alpha-centauri-v1';
+async function saveGame(){
+  try{
+    await window.storage.set(SAVE_KEY, JSON.stringify({state, powerRouting}));
+  }catch(e){ console.error('save failed', e); }
+}
+async function loadGame(){
+  try{
+    const res = await window.storage.get(SAVE_KEY);
+    if(res && res.value){
+      const data = JSON.parse(res.value);
+      if(data.state) Object.assign(state, data.state);
+      if(data.powerRouting) Object.assign(powerRouting, data.powerRouting);
+      return true;
+    }
+  }catch(e){ /* no save yet, fine */ }
+  return false;
+}
+async function deleteSave(){
+  try{ await window.storage.delete(SAVE_KEY); }catch(e){ /* ignore */ }
+}
+function startNewVoyage(){
+  deleteSave();
+  Object.assign(state, newVoyageState());
+  Object.assign(powerRouting, {weapons:34, shields:33, propulsion:33});
+  C = {active:false, enemyKey:null, enemy:null, enemyHull:0, enemyShields:0, turn:0, combo:0,
+       enemyEffects:[], tempWeapons:0, tempWeaponsTurns:0};
+  narr = {active:false, nodeId:null, queue:[]};
+  activeCrewTab = 'chen';
+  document.getElementById('endPanel').style.display = 'none';
+  document.getElementById('combatPanel').style.display = 'none';
+  openNarrative('departure_intro');
+  render();
+}
+
+// Tap-again-to-confirm, mirroring Across Country's resetBtn - avoids a
+// blocking native confirm() dialog while still preventing an accidental
+// one-click wipe of the run in progress. Two different buttons (header +
+// end-of-voyage panel) share this, so the original label is captured per-tap
+// rather than hardcoded, and restored as-is if the confirm window lapses.
+let newVoyageArmed = false, newVoyageTimer = null, newVoyageLabel = '';
+function requestNewVoyage(ev){
+  const btn = (ev && ev.currentTarget) || document.getElementById('btnNewVoyage');
+  if(!newVoyageArmed){
+    newVoyageArmed = true;
+    if(btn){ newVoyageLabel = btn.textContent; btn.textContent = 'Tap again to confirm'; }
+    newVoyageTimer = setTimeout(() => { newVoyageArmed = false; if(btn) btn.textContent = newVoyageLabel; }, 3000);
+    return;
+  }
+  clearTimeout(newVoyageTimer);
+  newVoyageArmed = false;
+  startNewVoyage();
+}
+
+/* ---------------- HELPERS ---------------- */
+function currentPerf(){
+  // Equipped propulsion gear now scales fuel/power efficiency too, not just raw
+  // cruise speed - same 7.5%-of-base-per-equipped-power-point rule
+  // effectiveCruiseLyPerHour() uses (0.003 gearBonus / 0.04 CRUISE_LY_PER_HOUR),
+  // so a better propulsion component makes the ship faster AND more efficient.
+  const propPower = equippedPower('propulsion');
+  const gearRatio = 0.075;
+  return {
+    efficiency: SHIP.efficiency * (1 + propPower * gearRatio),
+    powerPerEnergy: SHIP.powerPerEnergy * (1 + propPower * gearRatio),
+  };
+}
+function fmtLy(n){ return n.toFixed(2) + ' ly'; }
+function fmtHour(h){
+  const hh = Math.floor(h); const mm = Math.round((h-hh)*60);
+  const ampm = hh >= 12 ? 'pm' : 'am';
+  const h12 = ((hh + 11) % 12) + 1;
+  return `${h12}:${mm.toString().padStart(2,'0')}${ampm}`;
+}
+function pushLog(text, cls){
+  state.log.unshift({text, cls: cls||''});
+  if(state.log.length > 60) state.log.pop();
+}
+function avgMorale(){
+  const vals = CREW_IDS.map(id => state.crew[id].morale);
+  return Math.round(vals.reduce((a,b)=>a+b,0) / vals.length);
+}
+
+/* ---------------- CREW MORALE (driven by journey phase) ----------------
+   Applied once per ship-day, at camp. Departure and Approach nudge
+   morale up; The Long Dark wears it down. This is the mechanical
+   spine of the tonal arc described in the design doc. */
+const PHASE_MORALE_DELTA = {
+  departure: 1,
+  longDark: -1,
+  approach: 2,
+  arrival: 0,
+};
+function tickCrewMorale(){
+  const phase = journeyPhase(state.lyTravelled);
+  const delta = (PHASE_MORALE_DELTA[phase.id] ?? 0) + shipComfortBonus();
+  CREW_IDS.forEach(id => {
+    const c = state.crew[id];
+    c.morale = Math.max(0, Math.min(100, c.morale + delta));
+  });
+}
+function checkPhaseTransition(){
+  const phase = journeyPhase(state.lyTravelled);
+  if(phase.id !== state.lastPhaseId){
+    state.lastPhaseId = phase.id;
+    // 'arrival' phase transition is handled by arriveAtWaypoint()'s climax node instead -
+    // the two land close enough together that giving 'arrival' its own node here risks
+    // firing right on top of it. departure has no transition (it's the starting phase).
+    if(phase.id === 'longDark') openNarrative('long_dark_intro');
+    else if(phase.id === 'approach') openNarrative('approach_signal');
+  }
+}
+
+/* ---------------- DRIVE / CRUISE LOOP ---------------- */
+function driveButtonState(){
+  if(state.arrived) return {label:'Voyage complete', sub:'', disabled:true};
+  if(state.atStation){
+    if(state.currentStop && state.currentStop.name === GATE_WAYPOINT && equippedPower('propulsion') < GATE_MIN_PROPULSION_POWER){
+      return {label:'Engines insufficient for deep-space transit', sub:`Fit a propulsion component rated ${GATE_MIN_PROPULSION_POWER}+ before continuing past the heliopause. Synthesize, salvage, or buy one first.`, disabled:true};
+    }
+    return {label:'Depart', sub:'Resume cruising toward the next waypoint.', disabled:false, isDepart:true};
+  }
+
+  const perf = currentPerf();
+  const next = getNextStop(state.lyTravelled);
+  const distToNext = Math.max(0, next.ly - state.lyTravelled);
+  const powerPerLy = 1/perf.powerPerEnergy, fuelPerLy = 1/perf.efficiency;
+  const maxLyByPower = state.power / powerPerLy;
+  const maxLyByFuel = state.fuel / fuelPerLy;
+
+  if(distToNext > 0.001){
+    if(maxLyByFuel < 0.01){
+      return {label:'Send distress beacon', sub:'Fuel cells depleted. Drift until a passing IASF vessel tows you in, costing the rest of the day.', disabled:false, isDistress:true};
+    }
+    if(state.hour >= DAY_END_HOUR - 0.001){
+      return {label:'Make camp', sub:"Ship's night cycle. Crew needs rest.", disabled:false, isCamp:true};
+    }
+    if(maxLyByPower < 0.01){
+      return {label:'Power nap unavailable', sub:'Reactor depleted for the day.', disabled:true};
+    }
+  }
+  return {label:'Engage cruise', sub:'Burns fuel & power toward the next waypoint · ship day runs 6:00-19:00', disabled:false};
+}
+
+function driveStep(){
+  const btn = driveButtonState();
+  if(btn.isDepart){ departStation(); return; }
+  if(btn.isDistress){ sendDistressBeacon(); return; }
+  if(btn.isCamp){ makeCamp(); return; }
+  if(state.arrived) return;
+  if(state.hour >= DAY_END_HOUR - 0.001){ makeCamp(); return; }
+
+  const perf = currentPerf();
+  const next = getNextStop(state.lyTravelled);
+  const distToNext = Math.max(0, next.ly - state.lyTravelled);
+  if(distToNext <= 0.001){ render(); return; }
+
+  const powerPerLy = 1/perf.powerPerEnergy, fuelPerLy = 1/perf.efficiency;
+  const hoursLeftToday = Math.max(0, DAY_END_HOUR - state.hour);
+
+  const cruiseSpeed = effectiveCruiseLyPerHour();
+  let lyThisStep = Math.min(cruiseSpeed*HOUR_STEP, distToNext, cruiseSpeed*hoursLeftToday);
+  const maxLyByPower = state.power / powerPerLy;
+  const maxLyByFuel = state.fuel / fuelPerLy;
+  lyThisStep = Math.max(0, Math.min(lyThisStep, maxLyByPower, maxLyByFuel));
+
+  if(lyThisStep < 0.005){
+    if(state.fuel < fuelPerLy * 0.01){ sendDistressBeacon(); }
+    else { pushLog("Reactor's too drained to keep cruising. Making camp for the ship's night cycle.", 'l-event'); makeCamp(); }
+    return;
+  }
+
+  const hoursUsed = lyThisStep / cruiseSpeed;
+  state.hour = Math.min(DAY_END_HOUR, state.hour + hoursUsed);
+  state.power = Math.max(0, state.power - lyThisStep*powerPerLy);
+  state.fuel = Math.max(0, state.fuel - lyThisStep*fuelPerLy);
+  state.lyTravelled += lyThisStep;
+
+  pushLog(`Cruising: ${fmtLy(lyThisStep)} covered toward ${next.name} (${fmtHour(state.hour)}).`, 'l-cruise');
+  checkPhaseTransition();
+  checkCrewBeats();
+
+  if(state.lyTravelled >= next.ly - 0.001){
+    arriveAtWaypoint(next);
+    return;
+  }
+  if(state.hour >= DAY_END_HOUR - 0.001){
+    pushLog("Ship's night cycle beginning. Making camp.", 'l-event');
+    makeCamp();
+    return;
+  }
+  render();
+}
+
+function arriveAtWaypoint(stop){
+  state.visitedStops.push(stop.name);
+  if(stop.type === 'arrival'){
+    state.arrived = true;
+    pushLog(`New Dawn drops out of cruise at <strong>${stop.name}</strong>.`, 'l-arrive');
+    openNarrative('arrival_climax');
+    return;
+  }
+  state.atStation = true;
+  state.currentStop = stop;
+  const friendly = stop.type === 'friendly_station';
+  if(friendly){
+    state.fuel = SHIP.maxFuel;
+    state.power = SHIP.maxPower;
+    const needsRepair = state.hull < SHIP.maxHull || state.shields < effectiveMaxShields();
+    state.hull = SHIP.maxHull;
+    state.shields = effectiveMaxShields();
+    pushLog(`Docking at ${stop.name}. IASF supply lines top off fuel and reactor charge in full.` + (needsRepair ? ' Repair crews patch the hull and bring shields back online.' : ''), 'l-event');
+    render();
+  } else if(WAYPOINT_STORY[stop.name]){
+    openNarrative(WAYPOINT_STORY[stop.name]);
+  } else {
+    const flavor = {
+      waypoint: 'A marked waypoint, unmanned. Nothing to trade here, just a moment to hold position.',
+      derelict: 'A derelict hulk drifts nearby. Worth a closer look, once salvage operations are online.',
+      anomaly: 'Sensors are struggling to make sense of this reading. Best to keep the crew\'s eyes on it.',
+    };
+    pushLog(`Arriving at ${stop.name}. ${flavor[stop.type] || ''}`, 'l-event');
+    render();
+  }
+}
+
+function departStation(){
+  state.atStation = false;
+  state.currentStop = null;
+  render();
+}
+
+function powerNap(){
+  // Allowed while docked too (not just cruising) - otherwise a ship that
+  // arrives at a non-friendly waypoint (no auto-refuel) under-provisioned on
+  // power has zero recovery options: Scan/Survey both need power, Depart can
+  // be gated (see GATE_MIN_PROPULSION_POWER), and this used to be the one
+  // action always blocked at exactly the moment it'd be needed most.
+  if(state.arrived) return;
+  const before = state.power;
+  state.hour = Math.min(DAY_END_HOUR, state.hour + NAP_HOUR_COST);
+  state.power = Math.min(SHIP.maxPower, state.power + NAP_POWER_RESTORE);
+  const gained = Math.round(state.power - before);
+  pushLog(`Reactor cycled down for a short recharge. (${fmtHour(state.hour)}, +${gained} power)`, 'l-event');
+  if(state.hour >= DAY_END_HOUR - 0.001){
+    pushLog("Ship's night cycle beginning by the time the reactor's back up. Making camp.", 'l-event');
+    makeCamp();
+    return;
+  }
+  render();
+}
+
+function sendDistressBeacon(){
+  if(state.arrived) return;
+  const next = getNextStop(state.lyTravelled);
+  pushLog(`[ Day ${state.day} ends ]`, 'l-warn');
+  pushLog(`Fuel cells empty. New Dawn drifts, beacon active, until a passing IASF supply run picks up the signal.`, 'l-warn');
+  pushLog(`Towed in to <strong>${next.name}</strong>. No charge, but the whole day's lost drifting.`, 'l-warn');
+  state.day += 1;
+  state.hour = DAY_START_HOUR;
+  state.lyTravelled = next.ly;
+  tickCrewMorale();
+  checkPhaseTransition();
+  checkCrewBeats();
+  arriveAtWaypoint(next);
+}
+
+function makeCamp(){
+  if(state.arrived) return;
+  pushLog(`[ Day ${state.day} ends ]`, 'l-event');
+  tickCrewMorale();
+  state.day += 1;
+  state.hour = DAY_START_HOUR;
+  // No comfort/quarters system yet (upgrade pass) - flat partial recharge for now.
+  state.power = Math.min(SHIP.maxPower, state.power + Math.round(SHIP.maxPower * 0.6));
+  const shieldRegen = dailyShieldRegen();
+  if(shieldRegen > 0) state.shields = Math.min(effectiveMaxShields(), state.shields + shieldRegen);
+  const hullRepair = dailyHullRepair();
+  if(hullRepair > 0) state.hull = Math.min(SHIP.maxHull, state.hull + hullRepair);
+  checkCrewBeats();
+  pushLog(`[ Day ${state.day} begins. Crew morale: ${avgMorale()}/100 ]`, 'l-event');
+  render();
+}
+
+/* ---------------- COMBAT LOOP ----------------
+   Ported from Underpass: fire/overcharge/systems + 3-pip combo,
+   reflavoured to hull/shields/weapons. Player-triggered only -
+   reached via scanForContacts() while docked at a waypoint. */
+function d(n){ return Math.floor(Math.random()*n)+1; }
+
+function scanForContacts(){
+  if(!state.atStation || state.arrived || C.active) return;
+  if(state.power < SCAN_POWER_COST){ pushLog('Not enough reactor charge to run a sensor sweep.', 'l-warn'); return; }
+  state.power -= SCAN_POWER_COST;
+
+  const phase = journeyPhase(state.lyTravelled);
+  const table = ENCOUNTER_TABLE[phase.id] || ENCOUNTER_TABLE.departure;
+  if(Math.random() < table.chance && table.pool.length){
+    const totalW = table.pool.reduce((s,p)=>s+p.w, 0);
+    let roll = Math.random()*totalW;
+    let pick = table.pool[0].key;
+    for(const p of table.pool){ if(roll < p.w){ pick = p.key; break; } roll -= p.w; }
+    startCombat(pick);
+  } else {
+    pushLog('Sensor sweep comes back clear. No contacts in range.', 'l-event');
+    render();
+  }
+}
+
+/* ---------------- TRADING POST / UPGRADE ECONOMY ----------------
+   Station market only available at friendly stations (via the
+   Quartermaster pane). Selling and equipping work on anything in
+   inventory, wherever it came from - shop, combat loot, or the
+   synthesizer. Equipping swaps with whatever's already in that slot,
+   mirroring assignCrew()'s "one thing per slot" pattern. */
+function buyItem(itemId){
+  const item = ITEMS[itemId];
+  if(!item) return;
+  const price = BUY_PRICE[item.quality];
+  if(state.salvage < price){ pushLog(`Not enough salvage for ${item.name}.`, 'l-warn'); render(); return; }
+  state.salvage -= price;
+  state.inventory.push(itemId);
+  pushLog(`Purchased ${item.name} for ${price} salvage.`, 'l-event');
+  render();
+}
+
+function sellItem(inventoryIndex){
+  const itemId = state.inventory[inventoryIndex];
+  const item = ITEMS[itemId];
+  if(!item) return;
+  const value = SELL_VALUE[item.quality] || 0;
+  state.inventory.splice(inventoryIndex, 1);
+  state.salvage += value;
+  pushLog(`Sold ${item.name} for ${value} salvage.`, 'l-event');
+  render();
+}
+
+function equipItem(inventoryIndex){
+  const itemId = state.inventory[inventoryIndex];
+  const item = ITEMS[itemId];
+  if(!item || !item.slot) return;
+  const previous = state.equipped[item.slot];
+  state.equipped[item.slot] = itemId;
+  state.inventory.splice(inventoryIndex, 1);
+  if(previous) state.inventory.push(previous);
+  pushLog(`${item.name} fitted to ${SLOT_LABEL[item.slot]}.` + (previous ? ` ${ITEMS[previous].name} returned to the hold.` : ''), 'l-event');
+  render();
+}
+
+function unequipItem(slot){
+  const itemId = state.equipped[slot];
+  if(!itemId) return;
+  state.equipped[slot] = null;
+  state.inventory.push(itemId);
+  // Shields dropping below the new (lower) cap just clamps - no damage dealt by unequipping.
+  if(slot === 'shields') state.shields = Math.min(state.shields, effectiveMaxShields());
+  pushLog(`${ITEMS[itemId].name} removed from ${SLOT_LABEL[slot]} and returned to the hold.`, 'l-event');
+  render();
+}
+
+function combatLog(msg, cls){
+  const log = document.getElementById('combatLog');
+  const line = document.createElement('div');
+  line.className = cls || '';
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function startCombat(enemyKey){
+  const e = ENEMIES[enemyKey];
+  C = {active:true, enemyKey, enemy:e, enemyHull:e.hull, enemyShields:e.shields, turn:0, combo:0,
+       enemyEffects:[], tempWeapons:0, tempWeaponsTurns:0};
+  document.getElementById('combatTitle').textContent = 'CONTACT: ' + e.name.toUpperCase();
+  document.getElementById('cEName').textContent = e.name + ' · Hull';
+  document.getElementById('combatLog').innerHTML = '';
+  pushLog(`Contact identified: ${e.name}. ${e.desc || ''} Weapons free.`, 'l-warn');
+  combatLog('Engagement started.', 'cl-sys');
+  render();
+}
+
+function applyDamageTo(target, dmg){
+  // target: 'player' | 'enemy' - shields absorb first, overflow carries to hull
+  if(target === 'player'){
+    if(state.shields > 0){
+      const absorbed = Math.min(state.shields, dmg);
+      state.shields -= absorbed;
+      dmg -= absorbed;
+    }
+    if(dmg > 0) state.hull = Math.max(0, state.hull - dmg);
+  } else {
+    if(C.enemyShields > 0){
+      const absorbed = Math.min(C.enemyShields, dmg);
+      C.enemyShields -= absorbed;
+      dmg -= absorbed;
+    }
+    if(dmg > 0) C.enemyHull = Math.max(0, C.enemyHull - dmg);
+  }
+}
+
+function updateComboPips(){
+  for(let i=0;i<3;i++){
+    const p = document.getElementById('pip'+i);
+    p.classList.toggle('lit', i < C.combo && C.combo < 3);
+    p.classList.toggle('max', C.combo >= 3);
+  }
+  document.getElementById('comboLbl').textContent = C.combo >= 3 ? 'TARGETING LOCK' : '';
+}
+
+function enemyIsStunned(){
+  return !!C.enemyEffects.find(e => e.name === 'stunned' && e.turns > 0);
+}
+
+function enemyCounterattack(){
+  if(!C.active) return;
+  if(enemyIsStunned()){
+    combatLog(`${C.enemy.name}'s systems are fried. No counterattack.`, 'cl-sys');
+  } else {
+    const roll = d(4);
+    const dmg = Math.max(1, C.enemy.weapons + roll);
+    applyDamageTo('player', dmg);
+    combatLog(`${C.enemy.name} hits New Dawn for ${dmg}.  [d4:${roll}]`, 'cl-dmg');
+  }
+  C.enemyEffects.forEach(e => e.turns--);
+  C.enemyEffects = C.enemyEffects.filter(e => e.turns > 0);
+  if(C.tempWeaponsTurns > 0){ C.tempWeaponsTurns--; if(C.tempWeaponsTurns === 0){ C.tempWeapons = 0; combatLog('Weapons overcharge fades.', 'cl-sys'); } }
+
+  render();
+  if(state.hull <= 0){ setTimeout(combatLose, 500); return; }
+}
+
+function combatFire(){
+  if(!C.active) return;
+  C.turn++;
+  const roll = d(6);
+  const wpn = effectiveWeapons();
+  const comboBonus = C.combo >= 3 ? Math.floor((wpn + C.tempWeapons) * 0.55) : 0;
+  const dmg = Math.max(1, wpn + C.tempWeapons + roll + comboBonus);
+  applyDamageTo('enemy', dmg);
+  if(comboBonus > 0){
+    combatLog(`TARGETING LOCK: ${C.enemy.name} takes ${dmg}. [d6:${roll} +lock:${comboBonus}]`, 'cl-crit');
+    C.combo = 0;
+  } else {
+    combatLog(`Weapons fire: ${C.enemy.name} takes ${dmg}. [d6:${roll}]`, 'cl-hit');
+    C.combo = Math.min(C.combo + 1, 3);
+  }
+  updateComboPips();
+  if(C.enemyHull <= 0){ render(); setTimeout(combatWin, 500); return; }
+  setTimeout(enemyCounterattack, 450);
+}
+
+function combatOvercharge(){
+  if(!C.active) return;
+  C.turn++;
+  const roll = d(8);
+  const hit = Math.random() > 0.22;
+  if(hit){
+    const dmg = Math.max(1, effectiveWeapons() + C.tempWeapons + roll);
+    applyDamageTo('enemy', dmg);
+    combatLog(`OVERCHARGE: ${C.enemy.name} takes ${dmg}. [d8:${roll}]`, 'cl-crit');
+    if(Math.random() < 0.25){
+      C.enemyEffects.push({name:'stunned', turns:1});
+      combatLog(`${C.enemy.name}'s systems are fried!`, 'cl-crit');
+    }
+  } else {
+    combatLog('Overcharge misfires. No damage dealt.', 'cl-sys');
+  }
+  C.combo = 0;
+  updateComboPips();
+  if(C.enemyHull <= 0){ render(); setTimeout(combatWin, 500); return; }
+  setTimeout(enemyCounterattack, 450);
+}
+
+function combatSystems(){
+  if(!C.active) return;
+  const idx = state.inventory.findIndex(id => ITEMS[id] && ITEMS[id].type === 'consumable');
+  if(idx === -1){
+    combatLog('No usable systems online.', 'cl-sys');
+    return;
+  }
+  const itemId = state.inventory[idx];
+  const item = ITEMS[itemId];
+  state.inventory.splice(idx, 1);
+  const healed = Math.min(item.heal, SHIP.maxHull - state.hull);
+  state.hull = Math.min(SHIP.maxHull, state.hull + item.heal);
+  combatLog(`${item.name} deployed. Hull patched +${healed}.`, 'cl-win');
+  render();
+}
+
+function combatDisengage(){
+  if(!C.active) return;
+  if(Math.random() < 0.55){
+    C.active = false;
+    pushLog(`Disengaged from ${C.enemy.name}. New Dawn breaks off and holds position.`, 'l-event');
+    render();
+  } else {
+    const roll = d(4);
+    const dmg = Math.max(1, C.enemy.weapons + roll);
+    applyDamageTo('player', dmg);
+    combatLog(`Disengage failed. ${C.enemy.name} hits New Dawn for ${dmg} on the way out.`, 'cl-dmg');
+    render();
+    if(state.hull <= 0){ setTimeout(combatLose, 500); return; }
+  }
+}
+
+function rollLootDrop(tier){
+  const table = LOOT_TABLE[tier];
+  if(!table) return null;
+  if(Math.random() > table.dropChance) return null;
+  return table.slots[Math.floor(Math.random() * table.slots.length)];
+}
+function rollMaterialsDrop(){
+  if(Math.random() > 0.6) return null;
+  const type = MATERIAL_TYPES[Math.floor(Math.random() * MATERIAL_TYPES.length)];
+  const qty = 1 + Math.floor(Math.random() * 3);
+  return {type, qty};
+}
+
+function combatWin(){
+  const e = C.enemy;
+  const salvageGain = SELL_VALUE[e.salvage] || 5;
+  state.salvage += salvageGain;
+  state.kills += 1;
+  C.active = false;
+  CREW_IDS.forEach(id => {
+    const bonus = state.crew[id].assigned === 'weapons' ? 3 : 2;
+    state.crew[id].morale = Math.min(100, state.crew[id].morale + bonus);
+  });
+  pushLog(`${e.name} destroyed. Salvage teams recover ${salvageGain} units of usable material.`, 'l-arrive');
+  const lootId = rollLootDrop(e.salvage);
+  if(lootId){
+    state.inventory.push(lootId);
+    pushLog(`Salvage team also recovers a ${QUALITY[ITEMS[lootId].quality].label.toLowerCase()} ${ITEMS[lootId].name} from the wreck. Stowed in the hold.`, 'l-arrive');
+  }
+  const matDrop = rollMaterialsDrop();
+  if(matDrop){
+    state.materials[matDrop.type] = (state.materials[matDrop.type] || 0) + matDrop.qty;
+    pushLog(`Wreckage yields ${matDrop.qty} unit${matDrop.qty>1?'s':''} of ${MATERIAL_LABEL[matDrop.type].toLowerCase()}.`, 'l-arrive');
+  }
+  checkCrewBeats();
+  drainNarrativeQueue();
+  render();
+}
+
+function combatLose(){
+  C.active = false;
+  state.hull = 1;
+  state.shields = 0;
+  CREW_IDS.forEach(id => { state.crew[id].morale = Math.max(0, state.crew[id].morale - 5); });
+  pushLog(`Hull breach critical. New Dawn limps out of the engagement. Repairs are needed at the next friendly station before another fight is survivable.`, 'l-warn');
+  checkCrewBeats();
+  drainNarrativeQueue();
+  render();
+}
+
+/* ---------------- RENDER ---------------- */
+function render(){
+  saveGame();
+  if(state.arrived && !narr.active && !C.active){
+    showEndPanel();
+    return;
+  }
+  const phase = journeyPhase(state.lyTravelled);
+  document.getElementById('phaseTag').textContent = phase.label;
+  document.getElementById('phaseTag').className = 'phase-tag phase-' + phase.id;
+  document.body.className = 'phase-' + phase.id;
+
+  document.getElementById('stDay').textContent = state.day;
+  document.getElementById('stHour').textContent = fmtHour(state.hour);
+  document.getElementById('stDist').textContent = fmtLy(state.lyTravelled) + ' / ' + fmtLy(JOURNEY_TOTAL_LY) + '  (' + Math.round(journeyPct(state.lyTravelled)*100) + '%)';
+  document.getElementById('stNext').textContent = state.arrived ? '·' : getNextStop(state.lyTravelled).name;
+
+  document.getElementById('stFuelN').textContent = Math.round(state.fuel) + ' / ' + SHIP.maxFuel;
+  document.getElementById('stFuel').style.width = (100*state.fuel/SHIP.maxFuel) + '%';
+  document.getElementById('stPowerN').textContent = Math.round(state.power) + ' / ' + SHIP.maxPower;
+  document.getElementById('stPower').style.width = (100*state.power/SHIP.maxPower) + '%';
+  document.getElementById('stHullN').textContent = Math.round(state.hull) + ' / ' + SHIP.maxHull;
+  document.getElementById('stHull').style.width = (100*state.hull/SHIP.maxHull) + '%';
+  document.getElementById('stShieldsN').textContent = Math.round(state.shields) + ' / ' + effectiveMaxShields();
+  document.getElementById('stShields').style.width = (100*state.shields/effectiveMaxShields()) + '%';
+
+  document.getElementById('crewList').innerHTML = CREW_IDS.map(id => {
+    const c = CREW_ROSTER[id], s = state.crew[id];
+    return `<div class="crewCard">
+      <div class="crewline"><span>${c.name} <span style="color:#5a6b80">(${c.role})</span></span><span>${s.morale}</span></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('log').innerHTML = state.log.map(l => `<div class="${l.cls}">${l.text}</div>`).join('');
+
+  document.getElementById('stSalvage').textContent = state.salvage;
+  document.getElementById('stKills').textContent = state.kills;
+  document.getElementById('logCount').textContent = state.captainsLog.length;
+
+  document.getElementById('combatPanel').style.display = C.active ? 'block' : 'none';
+  document.getElementById('travelControls').style.display = (C.active || narr.active) ? 'none' : 'block';
+
+  if(C.active){
+    document.getElementById('cPHullN').textContent = Math.round(state.hull) + ' / ' + SHIP.maxHull;
+    document.getElementById('cPHull').style.width = (100*state.hull/SHIP.maxHull) + '%';
+    document.getElementById('cPShieldsN').textContent = Math.round(state.shields) + ' / ' + effectiveMaxShields();
+    document.getElementById('cPShields').style.width = (100*state.shields/effectiveMaxShields()) + '%';
+    document.getElementById('cEHullN').textContent = Math.max(0,Math.round(C.enemyHull)) + ' / ' + C.enemy.hull;
+    document.getElementById('cEHull').style.width = (100*Math.max(0,C.enemyHull)/C.enemy.hull) + '%';
+    document.getElementById('cEShieldsN').textContent = Math.max(0,Math.round(C.enemyShields)) + ' / ' + C.enemy.shields;
+    document.getElementById('cEShields').style.width = (100*Math.max(0,C.enemyShields)/Math.max(1,C.enemy.shields)) + '%';
+    return;
+  }
+
+  const btn = driveButtonState();
+  const driveBtn = document.getElementById('btnDrive');
+  driveBtn.textContent = btn.label;
+  driveBtn.disabled = btn.disabled;
+  document.getElementById('btnSub').textContent = btn.sub;
+  document.getElementById('btnNap').disabled = state.arrived || state.power >= SHIP.maxPower;
+  document.getElementById('btnScan').style.display = state.atStation && !state.arrived ? 'inline-block' : 'none';
+  document.getElementById('btnScan').disabled = state.power < SCAN_POWER_COST;
+  document.getElementById('btnSurvey').style.display = state.atStation && !state.arrived ? 'inline-block' : 'none';
+  document.getElementById('btnSurvey').disabled = state.power < SURVEY_POWER_COST;
+
+  const invStop = state.currentStop;
+  const showInvestigate = state.atStation && !state.arrived && !!invStop
+    && invStop.type !== 'friendly_station' && !WAYPOINT_STORY[invStop.name];
+  document.getElementById('btnInvestigate').style.display = showInvestigate ? 'inline-block' : 'none';
+  document.getElementById('btnInvestigate').disabled = !showInvestigate
+    || !!state.flags['investigated_' + (invStop && invStop.name)] || state.power < INVESTIGATE_POWER_COST;
+
+  renderCrewPane();
+}
+
+function qClass(quality){ return 'q' + quality.charAt(0).toUpperCase() + quality.slice(1); }
+
+/* ---------------- CREW STATIONS UI ----------------
+   Four tabs, one per crew member, each showing the tools that match
+   their actual job rather than a generic "assign duty" list. Pilot:
+   route + momentum. Engineer: power routing + defense. Weapons
+   Officer: offense. Quartermaster: materials, synthesizer, cargo,
+   and the station market when docked somewhere friendly. */
+let activeCrewTab = 'chen';
+function setCrewTab(id){ activeCrewTab = id; render(); }
+
+function dutyBtnHtml(crewId, station){
+  const c = CREW_ROSTER[crewId], s = state.crew[crewId];
+  const active = s.assigned === station;
+  const specialist = c.dutyBoost === station;
+  return `<button class="dutyBtn ${active?'active':''} ${specialist?'specialist':''}" onclick="assignCrew('${crewId}','${station}')">
+    ${active ? 'On station' : 'Assign to ' + DUTY_LABEL[station]}</button>`;
+}
+
+function gearSlotHtml(slot, label){
+  const itemId = state.equipped[slot];
+  const item = itemId ? ITEMS[itemId] : null;
+  const candidates = state.inventory.map((id,idx)=>({id,idx})).filter(x => ITEMS[x.id].slot === slot);
+  return `<div class="paneSection">
+    <h3>${label}</h3>
+    <div class="shopItem">
+      <div><span class="itemName">${item ? `<span class="${qClass(item.quality)}">${item.name}</span>` : 'Nothing fitted'}</span>
+        ${item ? `<span class="itemMeta">Power ${item.power}</span>` : ''}</div>
+      ${item ? `<button onclick="unequipItem('${slot}')">Remove</button>` : ''}
+    </div>
+    ${candidates.length ? candidates.map(x => {
+      const it = ITEMS[x.id];
+      return `<div class="shopItem"><div><span class="itemName ${qClass(it.quality)}">${it.name}</span>
+        <span class="itemMeta">Power ${it.power} · in cargo hold</span></div>
+        <button onclick="equipItem(${x.idx})">Fit</button></div>`;
+    }).join('') : '<div class="shopEmpty">Nothing in the hold fits this system.</div>'}
+  </div>`;
+}
+
+function routingControlHtml(){
+  return `<div class="paneSection">
+    <h3>Power Routing</h3>
+    ${Object.entries({weapons:'Offense', shields:'Defense', propulsion:'Momentum'}).map(([ch,label]) => `
+      <div class="routingRow">
+        <span>${label}</span>
+        <div class="routingBar"><div style="width:${powerRouting[ch]}%"></div></div>
+        <span>${powerRouting[ch]}%</span>
+        <button onclick="adjustPowerRouting('${ch}')" ${powerRouting[ch]>=80?'disabled':''}>+10</button>
+      </div>`).join('')}
+    <div class="itemMeta" style="margin-top:6px;">Routing power to Defense above 40% also enables damage control (passive hull repair at camp).</div>
+  </div>`;
+}
+
+function routeListHtml(){
+  const nextIdx = getNextStopIndex(state.lyTravelled);
+  return `<div class="paneSection"><h3>Route</h3><div class="routeList">${ROUTE.map((stop, i) => {
+    const visited = state.visitedStops.includes(stop.name);
+    const current = i === nextIdx && !state.arrived;
+    return `<div class="routeStop ${visited?'visited':''} ${current?'current':''}">
+      <span>${stop.name}</span><span>${fmtLy(stop.ly)}${current ? ' · next' : visited ? ' · visited' : ''}</span>
+    </div>`;
+  }).join('')}</div></div>`;
+}
+
+function synthesizerHtml(){
+  const rows = Object.keys(RECIPES).map(itemId => {
+    const item = ITEMS[itemId];
+    const cost = RECIPES[itemId];
+    const affordable = canAfford(cost);
+    const costStr = Object.entries(cost).map(([m,q]) => `${q} ${MATERIAL_LABEL[m]}`).join(', ');
+    return `<div class="shopItem">
+      <div><span class="itemName ${qClass(item.quality)}">${item.name}</span>
+        <span class="itemMeta">${SLOT_LABEL[item.slot]} · needs ${costStr}</span></div>
+      <button ${affordable?'':'disabled'} onclick="synthesizeItem('${itemId}')">Synthesize</button>
+    </div>`;
+  }).join('');
+  return `<div class="paneSection"><h3>Synthesizer</h3>
+    <div class="itemMeta" style="margin-bottom:8px;">Materials on hand: ${MATERIAL_TYPES.map(m => `${state.materials[m]} ${MATERIAL_LABEL[m]}`).join(' · ')}</div>
+    ${rows}
+  </div>`;
+}
+
+function cargoHoldHtml(){
+  if(!state.inventory.length) return `<div class="paneSection"><h3>Cargo Hold</h3><div class="shopEmpty">Cargo hold is empty.</div></div>`;
+  const rows = state.inventory.map((itemId, idx) => {
+    const item = ITEMS[itemId];
+    const value = SELL_VALUE[item.quality] || 0;
+    return `<div class="shopItem">
+      <div><span class="itemName ${qClass(item.quality)}">${item.name}</span>
+        <span class="itemMeta">${item.slot ? SLOT_LABEL[item.slot] : 'Consumable'} · ${QUALITY[item.quality].label}</span></div>
+      <div>${item.slot ? `<button onclick="equipItem(${idx})">Fit</button>` : ''}<button onclick="sellItem(${idx})">Sell ${value}</button></div>
+    </div>`;
+  }).join('');
+  return `<div class="paneSection"><h3>Cargo Hold</h3>${rows}</div>`;
+}
+
+function stationMarketHtml(){
+  const atFriendly = state.atStation && state.currentStop && state.currentStop.type === 'friendly_station';
+  if(!atFriendly) return `<div class="paneSection"><h3>Station Market</h3><div class="shopEmpty">Only available while docked at a friendly station.</div></div>`;
+  const rows = STATION_STOCK.map(itemId => {
+    const item = ITEMS[itemId];
+    const price = item.type === 'consumable' ? BUY_PRICE.common : BUY_PRICE[item.quality];
+    const affordable = state.salvage >= price;
+    return `<div class="shopItem">
+      <div><span class="itemName ${qClass(item.quality)}">${item.name}</span>
+        <span class="itemMeta">${item.slot ? SLOT_LABEL[item.slot] : 'Consumable'} · ${QUALITY[item.quality].label}</span></div>
+      <button ${affordable?'':'disabled'} onclick="buyItem('${itemId}')">${price} salvage</button>
+    </div>`;
+  }).join('');
+  return `<div class="paneSection"><h3>Station Market</h3>${rows}</div>`;
+}
+
+function amenitiesHtml(){
+  const rows = CREW_SLOTS.map(slot => {
+    const itemId = state.equipped[slot];
+    const item = itemId ? ITEMS[itemId] : null;
+    return `<div class="shopItem">
+      <div><span class="itemName">${SLOT_LABEL[slot]}</span>
+        <span class="itemMeta">${item ? `<span class="${qClass(item.quality)}">${item.name}</span>` : 'Empty'}</span></div>
+      ${item ? `<button onclick="unequipItem('${slot}')">Remove</button>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="paneSection"><h3>Fitted Amenities</h3>${rows}</div>`;
+}
+
+const CREW_TAB_PANES = {
+  chen: () => routeListHtml() + gearSlotHtml('propulsion', 'Momentum Systems') +
+    `<div class="paneSection"><h3>Helm Station</h3>${dutyBtnHtml('chen','propulsion')}</div>`,
+  okafor: () => routingControlHtml() + gearSlotHtml('shields', 'Defense Systems') +
+    `<div class="paneSection"><h3>Shields Station</h3>${dutyBtnHtml('okafor','shields')}</div>`,
+  tane: () => gearSlotHtml('weapons', 'Offense Systems') +
+    `<div class="paneSection"><h3>Weapons Station</h3>${dutyBtnHtml('tane','weapons')}</div>`,
+  reyes: () => synthesizerHtml() + cargoHoldHtml() + amenitiesHtml() + stationMarketHtml(),
+};
+
+function renderCrewPane(){
+  const tabsEl = document.getElementById('crewTabs');
+  tabsEl.innerHTML = CREW_IDS.map(id => {
+    const c = CREW_ROSTER[id], s = state.crew[id];
+    return `<button class="crewTabBtn ${activeCrewTab===id?'active':''}" onclick="setCrewTab('${id}')">
+      <span class="tabName">${c.name}</span><span class="tabRole">${c.role}</span><span class="tabMorale">Morale ${s.morale}</span>
+    </button>`;
+  }).join('');
+
+  let html = '';
+  if(activeCrewTab === 'chen' && state.currentStop && state.currentStop.name === GATE_WAYPOINT
+     && equippedPower('propulsion') < GATE_MIN_PROPULSION_POWER){
+    html += `<div class="gateNotice">Deep-space transit blocked here until propulsion power reaches ${GATE_MIN_PROPULSION_POWER}+ (currently ${equippedPower('propulsion')}). Fit a component below.</div>`;
+  }
+  html += (CREW_TAB_PANES[activeCrewTab] || (()=>''))();
+  document.getElementById('crewPaneContent').innerHTML = html;
+}
+
+/* ---------------- INIT ---------------- */
+(async function init(){
+  const loaded = await loadGame();
+  if(loaded){
+    pushLog('Welcome back to the bridge, Captain.', 'l-event');
+    render();
+  } else {
+    openNarrative('departure_intro');
+    render();
+  }
+})();
+</script>
+</body>
+</html>

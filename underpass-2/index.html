@@ -1,0 +1,2253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UNDERPASS 2 // v1.0.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --g:#33ff33; --g2:#1d8c1d; --g3:#0a2e0a;
+  --amb:#ffaa00; --red:#ff3333; --blu:#33aaff;
+  --cyn:#00ffcc; --pur:#cc44ff; --wht:#d0e8d0;
+  --pink:#ff69b4; --pink2:#cc3377;
+  --bg:#050505; --bg2:#0b0b0b; --bg3:#111;
+  --bdr:#1a3d1a;
+  --danger:#ff4444;
+  --orange:#ff6600;
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--g);font-family:'Share Tech Mono',monospace;font-size:15px;line-height:1.6;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;}
+
+/* CRT */
+#crt-scan,#crt-band,#crt-vig,#crt-glow{position:fixed;inset:0;pointer-events:none;z-index:9997;transition:opacity .6s ease;}
+#crt-scan{background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.09) 2px,rgba(0,0,0,.09) 4px);}
+#crt-vig{z-index:9996;background:radial-gradient(ellipse at center,transparent 48%,rgba(0,0,0,.9) 100%);}
+#crt-glow{z-index:9995;background:radial-gradient(ellipse 55% 35% at 50% 50%,rgba(51,255,51,.03) 0%,transparent 70%);animation:phosphor 5s ease-in-out infinite;}
+#crt-band{left:0;right:0;height:3px;z-index:9998;background:rgba(51,255,51,.04);animation:scanBand 9s linear infinite;}
+body.in-game #crt-scan,body.in-game #crt-band,body.in-game #crt-vig,body.in-game #crt-glow{opacity:0;pointer-events:none;}
+@keyframes phosphor{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes scanBand{0%{top:-3px}100%{top:100vh}}
+
+/* BOOT */
+#boot-overlay{position:fixed;inset:0;background:#050505;z-index:10000;display:flex;align-items:flex-start;justify-content:flex-start;padding:40px 48px;}
+#boot-text{color:#1d6c1d;font-size:12px;line-height:1.7;letter-spacing:1px;font-family:'Share Tech Mono',monospace;white-space:pre-wrap;max-width:600px;}
+@keyframes bootFadeOut{to{opacity:0;}}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+.screen.hidden{display:none!important;}
+.screen.screen-enter{animation:screenIn .3s ease forwards;}
+.screen.screen-leave{animation:screenOut .18s ease forwards;}
+@keyframes screenIn{from{opacity:0;transform:scale(.985);}to{opacity:1;transform:scale(1);}}
+@keyframes screenOut{from{opacity:1;}to{opacity:0;transform:scale(1.01);filter:blur(1px);}}
+
+/* NOTIF */
+#notif{position:fixed;top:-50px;left:50%;transform:translateX(-50%);z-index:9990;background:rgba(0,8,0,.97);border:1px solid var(--g2);color:var(--g2);font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px 18px;letter-spacing:2px;white-space:nowrap;pointer-events:none;transition:top .25s cubic-bezier(.17,.67,.36,1.2);box-shadow:0 0 20px rgba(51,255,51,.1);}
+#notif.show{top:14px;}
+#notif.notif-danger{border-color:var(--red);color:var(--red);}
+#notif.notif-warn{border-color:var(--amb);color:var(--amb);}
+#notif.notif-level{border-color:var(--cyn);color:var(--cyn);}
+#notif.notif-romance{border-color:var(--pink);color:var(--pink);}
+
+/* COMBAT FLASH */
+#combat-flash{position:fixed;inset:0;pointer-events:none;z-index:9994;opacity:0;}
+#combat-flash.flash-hit{animation:flashAmber .22s ease forwards;}
+#combat-flash.flash-damage{animation:flashRed .28s ease forwards;}
+#combat-flash.flash-crit{animation:flashCrit .35s ease forwards;}
+@keyframes flashAmber{0%{opacity:1;background:rgba(255,170,0,.07);}100%{opacity:0;}}
+@keyframes flashRed{0%{opacity:1;background:rgba(255,30,30,.12);}50%{opacity:.7;}100%{opacity:0;}}
+@keyframes flashCrit{0%{opacity:1;background:rgba(255,50,50,.18);}30%{opacity:.5;}100%{opacity:0;}}
+
+/* TITLE */
+#title-screen{text-align:center;position:relative;overflow:hidden;}
+#rain-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;}
+#title-city{font-size:clamp(7px,1vw,11px);line-height:1.15;white-space:pre;color:var(--g2);text-align:center;margin-bottom:16px;opacity:.65;text-shadow:0 0 6px var(--g2);z-index:1;position:relative;animation:cityFloat 12s ease-in-out infinite;max-width:100vw;overflow:hidden;}
+@keyframes cityFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+.title-logo{font-size:clamp(28px,7vw,64px);letter-spacing:clamp(4px,2vw,12px);color:var(--g);text-shadow:0 0 20px var(--g),0 0 60px rgba(51,255,51,.2),0 0 100px rgba(51,255,51,.08);animation:glitch 7s infinite;margin-bottom:6px;z-index:1;position:relative;}
+.title-seq{color:var(--g2);font-size:clamp(11px,1.3vw,14px);letter-spacing:3px;margin-bottom:6px;z-index:1;position:relative;text-shadow:0 0 8px rgba(51,255,51,.2);}
+.title-sub{color:#1e5c1e;letter-spacing:4px;font-size:11px;margin-bottom:36px;z-index:1;position:relative;}
+.title-tag{display:none;}
+#title-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;z-index:1;position:relative;}
+#title-btns-import{width:100%;display:flex;justify-content:center;margin-top:4px;}
+.title-btn{letter-spacing:3px;padding:10px 22px;font-size:13px;}
+#import-u1-btn{color:var(--cyn);border-color:var(--cyn);font-size:11px;letter-spacing:2px;}
+#import-u1-btn:hover{background:rgba(0,255,204,.08);}
+
+#emusoft-badge{position:fixed;bottom:22px;right:26px;text-align:right;pointer-events:none;z-index:2;animation:emuGlow 6s ease-in-out infinite;opacity:1;transition:opacity .4s;}
+body.in-game #emusoft-badge{opacity:0 !important;pointer-events:none;animation:none;}
+#patch-btn{position:fixed;bottom:22px;left:26px;text-align:left;z-index:2;opacity:1;transition:opacity .4s;animation:emuGlow 6s ease-in-out infinite;}
+body.in-game #patch-btn{opacity:0 !important;pointer-events:none;animation:none;}
+#patch-btn button{background:transparent;border:none;cursor:pointer;font-family:'Share Tech Mono',monospace;color:#1d6c1d;font-size:9px;letter-spacing:2px;text-shadow:0 0 8px rgba(51,255,51,.3);padding:0;transition:color .2s;white-space:pre;line-height:1.6;text-align:left;}
+#patch-btn button:hover{color:#44dd44;text-shadow:0 0 10px rgba(51,255,51,.7);}
+.emusoft-art{color:#44dd44;font-size:9px;line-height:1.45;letter-spacing:.5px;text-shadow:0 0 10px rgba(51,255,51,.7),0 0 22px rgba(51,255,51,.3);font-family:'Share Tech Mono',monospace;white-space:pre;transition:color .5s;}
+.emusoft-sub{color:#1d6c1d;font-size:8px;letter-spacing:2px;margin-top:3px;}
+@keyframes emuGlow{0%,100%{opacity:.85;}50%{opacity:1;}}
+@keyframes glitch{0%,78%,100%{text-shadow:0 0 20px var(--g),0 0 60px rgba(51,255,51,.2);transform:translate(0);clip-path:none;}80%{text-shadow:-3px 0 var(--red),3px 0 var(--blu);transform:translate(2px,-1px);clip-path:inset(10% 0 45% 0);}82%{text-shadow:3px 0 var(--red),-3px 0 var(--blu);transform:translate(-2px,1px);clip-path:none;}}
+
+/* NAME SCREEN */
+#name-screen{text-align:center;}
+#name-inner{max-width:480px;width:100%;text-align:center;}
+#name-prompt{color:var(--g2);font-size:11px;letter-spacing:3px;margin-bottom:20px;}
+#name-input{background:transparent;border:none;border-bottom:1px solid var(--g2);color:var(--g);font-family:'Share Tech Mono',monospace;font-size:20px;letter-spacing:4px;text-align:center;width:100%;max-width:320px;padding:8px;outline:none;}
+#name-input::placeholder{color:#1a3a1a;}
+#name-confirm{margin-top:24px;letter-spacing:3px;padding:10px 28px;}
+
+/* GAME SCREEN */
+#game-screen{max-width:900px;width:100%;height:100%;padding:0;align-items:stretch;}
+#game-inner{width:100%;height:100%;display:flex;flex-direction:column;border:1px solid var(--bdr);background:var(--bg2);overflow:hidden;}
+
+/* HEADER */
+#hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;border-bottom:1px solid var(--bdr);background:var(--bg);flex-shrink:0;gap:8px;flex-wrap:wrap;}
+#hdr-title{font-size:11px;letter-spacing:3px;color:#1a3a1a;}
+#hdr-name{font-size:11px;letter-spacing:2px;color:var(--g2);}
+#hdr-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.btn{background:transparent;border:1px solid var(--g2);color:var(--g);font-family:'Share Tech Mono',monospace;cursor:pointer;letter-spacing:2px;padding:5px 10px;font-size:12px;transition:all .1s;min-height:36px;white-space:nowrap;}
+.btn:hover{background:rgba(51,255,51,.07);border-color:var(--g);}
+.btn.primary{border-color:var(--g);color:var(--g);box-shadow:0 0 12px rgba(51,255,51,.15);}
+.btn.primary:hover{background:rgba(51,255,51,.1);box-shadow:0 0 20px rgba(51,255,51,.25);}
+.btn.danger{border-color:var(--red);color:var(--red);}
+.btn.danger:hover{background:rgba(255,51,51,.08);}
+.btn.cyan{border-color:var(--cyn);color:var(--cyn);}
+.btn.cyan:hover{background:rgba(0,255,204,.08);}
+.btn.pink{border-color:var(--pink);color:var(--pink);}
+.btn.pink:hover{background:rgba(255,105,180,.08);}
+.btn.amber{border-color:var(--amb);color:var(--amb);}
+.btn.amber:hover{background:rgba(255,170,0,.08);}
+.btn-sm{font-size:11px;padding:3px 8px;min-height:28px;white-space:nowrap;}
+.btn.load-btn{border-color:var(--red);color:var(--red);}
+.btn.load-btn:hover{background:rgba(255,51,51,.08);}
+
+/* STATS BAR */
+#stats-bar{display:flex;align-items:center;gap:14px;padding:5px 14px;border-bottom:1px solid var(--bdr);background:var(--bg);flex-shrink:0;flex-wrap:wrap;}
+.stat{font-size:12px;color:var(--g2);letter-spacing:1px;}
+.stat span{color:var(--g);}
+.hp-bar{width:70px;height:7px;background:#0a0a0a;border:1px solid #1a2e1a;overflow:hidden;}
+.hp-fill{height:100%;transition:width .4s ease,background .4s ease;}
+
+/* NEEDS */
+#needs-bar{display:flex;align-items:center;gap:14px;padding:4px 14px;border-bottom:1px solid var(--bdr);background:var(--bg);flex-shrink:0;flex-wrap:wrap;}
+.need-lbl{font-size:11px;color:#1a3a1a;letter-spacing:1px;}
+.need-pips{display:flex;gap:3px;align-items:center;}
+.need-pip{width:10px;height:10px;border:1px solid #1a2a1a;background:#080808;transition:all .3s;}
+.need-pip.lit{background:var(--g2);border-color:var(--g);box-shadow:0 0 4px rgba(51,255,51,.4);}
+.heart-pip{width:10px;height:10px;border:1px solid #331122;background:#080808;transition:all .3s;font-size:9px;display:flex;align-items:center;justify-content:center;color:#331122;}
+.heart-pip.lit{background:#220011;border-color:var(--pink);color:var(--pink);box-shadow:0 0 4px rgba(255,105,180,.4);}
+#mara-hearts-need{display:none;align-items:center;gap:6px;}
+
+/* SCENE PANEL */
+#scene-panel{border-bottom:1px solid var(--bdr);overflow:hidden;position:relative;flex-shrink:0;transition:max-height .4s ease;max-height:155px;background:rgba(0,6,0,.9);}
+#ascii-art{font-size:clamp(7px,.85vw,9px);line-height:1.1;white-space:pre;color:#3a1a00;text-shadow:0 0 8px rgba(255,100,0,.3);padding:8px 16px 4px;border-bottom:1px solid #150505;overflow:hidden;max-height:80px;text-align:center;transition:color .4s,text-shadow .4s;}
+#ascii-art.romance-art{color:#1a0a15;text-shadow:0 0 8px rgba(255,105,180,.3);}
+#ascii-art.danger-art{color:#3a0808;text-shadow:0 0 8px rgba(255,51,51,.5);}
+#scene-title{font-size:12px;letter-spacing:3px;color:var(--g2);padding:6px 16px 2px;border-bottom:1px solid var(--bdr);}
+#ascii-toggle{position:absolute;top:4px;right:10px;background:transparent;border:none;color:#1a3a1a;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;letter-spacing:2px;transition:color .2s;}
+#ascii-toggle:hover{color:var(--g2);}
+
+/* TEXT + CHOICES */
+#main-panel{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
+#text-area{flex:1;overflow-y:auto;padding:16px 20px;scrollbar-width:thin;scrollbar-color:#1a3a1a #050505;}
+#text-out{font-size:14px;line-height:1.9;color:var(--wht);white-space:pre-wrap;}
+#choices{border-top:1px solid var(--bdr);padding:8px 12px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:240px;flex-shrink:0;}
+
+/* INV */
+#inv-bar{border-top:1px solid var(--bdr);padding:5px 12px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex-shrink:0;background:var(--bg);}
+#inv-label{font-size:10px;color:#1a3a1a;letter-spacing:2px;margin-right:4px;}
+.inv-item{font-size:10px;border:1px solid #1a3a1a;color:#2a5a2a;padding:2px 6px;cursor:pointer;transition:all .1s;letter-spacing:.5px;}
+.inv-item:hover{border-color:var(--g2);color:var(--g);}
+.inv-item.equipped{border-color:var(--amb);color:var(--amb);}
+
+/* COMBAT */
+#combat-screen{padding:12px;background:var(--bg);z-index:10;}
+#combat-inner{max-width:700px;width:100%;border:1px solid #3a1010;background:#040404;box-shadow:0 0 60px rgba(255,20,20,.12);position:relative;overflow:hidden;}
+#c-ascii{font-size:clamp(7px,.85vw,9px);line-height:1.1;white-space:pre;color:#3a0808;text-shadow:0 0 8px rgba(255,51,51,.5);padding:8px 16px 4px;border-bottom:1px solid #150505;overflow:hidden;max-height:80px;text-align:center;transition:color .4s,text-shadow .4s;}
+#c-field{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;padding:12px 16px;align-items:center;}
+.c-card{border:1px solid #1a1a1a;background:#060606;padding:10px 14px;}
+.c-name{font-size:11px;letter-spacing:2px;margin-bottom:6px;}
+.c-name.player{color:var(--g);}
+.c-name.enemy{color:var(--red);}
+.cmbt-hp-bar{width:100%;height:8px;background:#0a0a0a;border:1px solid #1e1e1e;overflow:hidden;}
+.cmbt-hp-fill{height:100%;transition:width .5s ease;}
+.cmbt-stats{font-size:10px;color:#2a4a2a;margin-top:6px;letter-spacing:1px;}
+.vs{color:#1a1a1a;font-size:20px;text-align:center;}
+#c-log{height:70px;overflow-y:auto;margin:0 16px 8px;padding:6px 10px;border:1px solid #1a1010;background:#030303;font-size:11px;color:#2a4a2a;line-height:1.7;scrollbar-width:thin;}
+#c-acts{padding:8px 12px 12px;border-top:1px solid #150505;}
+#c-action-row{display:flex;gap:8px;flex-wrap:wrap;}
+.combo-row{display:flex;gap:3px;margin-bottom:6px;padding:0 4px;}
+.combo-pip{width:11px;height:11px;border:1px solid #1a0505;background:#080808;transition:all .2s;}
+.combo-pip.lit{background:#550000;border-color:#aa0000;box-shadow:0 0 4px rgba(200,0,0,.5);}
+
+/* NPC */
+#npc-screen{background:var(--bg);z-index:10;}
+#npc-inner{max-width:620px;width:100%;border:1px solid #1a2a3a;background:var(--bg2);display:flex;flex-direction:column;max-height:88vh;}
+#npc-inner.romance-mode{border-color:var(--pink2);box-shadow:0 0 30px rgba(204,51,119,.08);}
+#npc-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #1a2a3a;font-size:11px;letter-spacing:3px;color:var(--cyn);flex-shrink:0;}
+#npc-inner.romance-mode #npc-hdr{border-color:var(--pink2);color:var(--pink);}
+#npc-portrait{font-size:9px;line-height:1.4;white-space:pre;color:#1a3a1a;text-align:center;padding:10px;border-bottom:1px solid #0a1a0a;flex-shrink:0;}
+#npc-meta{display:flex;justify-content:space-between;align-items:center;padding:5px 16px;border-bottom:1px solid #0a1a0a;flex-shrink:0;}
+#npc-name-display{font-size:12px;color:var(--g2);letter-spacing:2px;}
+#npc-rel{font-size:10px;color:#1a3a1a;letter-spacing:1px;}
+#npc-body{flex:1;overflow-y:auto;padding:14px 16px;font-size:13px;line-height:1.8;color:var(--wht);white-space:pre-wrap;min-height:80px;}
+#npc-choices{border-top:1px solid #0a1a0a;padding:8px 12px;display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:180px;flex-shrink:0;}
+
+/* MAP / LOG / SHOP / SCAV — same as U1 */
+#map-screen,#log-screen{background:rgba(0,0,0,.95);z-index:90;}
+#map-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+#map-screen.hidden{display:none!important;}
+#map-inner{max-width:680px;width:100%;border:1px solid var(--bdr);background:var(--bg2);}
+#map-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--bdr);font-size:11px;letter-spacing:3px;color:var(--g);}
+#map-body{padding:14px 16px;overflow-y:auto;max-height:70vh;}
+.map-zone{margin-bottom:14px;}
+.map-zone-name{font-size:10px;letter-spacing:3px;color:var(--g2);margin-bottom:6px;border-bottom:1px solid #0a1a0a;padding-bottom:4px;}
+.map-node{font-size:12px;color:#1a3a1a;padding:3px 0;letter-spacing:1px;}
+.map-node.visited{color:#2a5a2a;}
+.map-node.current{color:var(--g);text-shadow:0 0 6px rgba(51,255,51,.3);}
+.map-node.current::before{content:'► ';}
+
+#log-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+#log-screen.hidden{display:none!important;}
+#log-inner{max-width:640px;width:100%;max-height:82vh;border:1px solid var(--bdr);background:var(--bg2);display:flex;flex-direction:column;}
+#log-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--bdr);font-size:11px;letter-spacing:3px;color:var(--g);flex-shrink:0;}
+#log-tabs{display:flex;border-bottom:1px solid var(--bdr);flex-shrink:0;}
+.log-tab{background:transparent;border:none;border-right:1px solid var(--bdr);color:#2a4a2a;font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 14px;cursor:pointer;letter-spacing:2px;transition:all .1s;min-height:32px;white-space:nowrap;}
+.log-tab.active{color:var(--g);background:rgba(51,255,51,.04);}
+#log-body{flex:1;overflow-y:auto;padding:14px 16px;scrollbar-width:thin;}
+.log-entry{margin-bottom:14px;border-left:2px solid #1a3a1a;padding-left:12px;}
+.log-entry-head{font-size:10px;letter-spacing:2px;color:var(--g2);margin-bottom:4px;}
+.log-entry-body{font-size:12px;color:#3a5a3a;line-height:1.7;}
+
+#shop-screen{background:var(--bg);z-index:10;}
+#shop-inner{max-width:600px;width:100%;border:1px solid #3a2a00;background:var(--bg2);box-shadow:0 0 30px rgba(255,170,0,.08);}
+#shop-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #2a1a00;font-size:11px;letter-spacing:3px;color:var(--amb);flex-shrink:0;}
+#shop-gold{font-size:11px;color:var(--amb);}
+#shop-list{padding:10px;overflow-y:auto;max-height:55vh;}
+.shop-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #1a1000;margin-bottom:6px;transition:border-color .15s;}
+.shop-item:hover{border-color:#3a2a00;}
+.shop-item-info{flex:1;}
+.shop-item-name{font-size:12px;color:var(--amb);letter-spacing:1px;}
+.shop-item-desc{font-size:10px;color:#3a2a00;margin-top:2px;}
+
+#scav-screen{background:var(--bg);z-index:10;}
+#scav-inner{max-width:620px;width:100%;border:1px solid #2a2000;background:var(--bg2);}
+#scav-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #1a1000;font-size:11px;letter-spacing:3px;color:var(--amb);flex-shrink:0;}
+#scav-body{padding:14px 18px;min-height:80px;font-size:13px;color:var(--wht);line-height:1.8;white-space:pre-wrap;}
+#scav-choices{border-top:1px solid #1a1000;padding:8px 12px;display:flex;flex-direction:column;gap:5px;}
+
+/* END SCREENS */
+#gameover-screen,#victory-screen{text-align:center;max-width:640px;padding:30px;overflow-y:auto;max-height:100vh;width:100%;background:var(--bg);z-index:10;}
+.end-ascii{font-size:9px;line-height:1.2;white-space:pre;opacity:.4;margin-bottom:18px;}
+#gameover-screen .end-ascii{color:var(--red);}
+#victory-screen .end-ascii{color:var(--g);}
+.end-title{font-size:clamp(28px,7vw,48px);letter-spacing:7px;margin-bottom:20px;}
+.gameover-title{color:var(--red);animation:flickerEnd 2.5s infinite;text-shadow:0 0 30px rgba(255,50,50,.5);}
+.victory-title{color:var(--g);animation:victoryPulse 2s ease-in-out infinite;text-shadow:0 0 30px rgba(51,255,51,.4);}
+@keyframes flickerEnd{0%,100%{opacity:1}45%{opacity:.8}50%{opacity:.3}55%{opacity:.85}}
+@keyframes victoryPulse{0%,100%{text-shadow:0 0 20px rgba(51,255,51,.3)}50%{text-shadow:0 0 50px rgba(51,255,51,.7),0 0 80px rgba(51,255,51,.2)}}
+.end-text{color:var(--wht);font-size:13px;line-height:1.9;margin-bottom:18px;max-width:500px;white-space:pre-wrap;}
+.end-stats{color:var(--g2);font-size:11px;letter-spacing:2px;margin-bottom:24px;}
+.end-btn{letter-spacing:3px;padding:11px 26px;font-size:13px;}
+
+/* PATCH NOTES */
+#patch-screen{z-index:80;background:rgba(0,0,0,.97);}
+#patch-inner{max-width:640px;width:100%;border:1px solid var(--bdr);background:var(--bg2);display:flex;flex-direction:column;max-height:88vh;}
+#patch-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--bdr);font-size:11px;letter-spacing:3px;color:var(--g);flex-shrink:0;}
+#patch-body{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;}
+.patch-version{border:1px solid #0a1a0a;margin-bottom:12px;padding:10px 14px;}
+.patch-ver-label{font-size:11px;color:var(--g2);letter-spacing:3px;margin-bottom:8px;}
+.patch-ver-label span{color:#1a3a1a;font-size:10px;margin-left:8px;}
+.patch-entry{font-size:11px;color:#2a4a2a;line-height:1.7;padding:3px 0 3px 10px;border-left:2px solid #0a1a0a;}
+.patch-entry b{color:var(--g);font-weight:normal;}
+.patch-entry.fix{border-left-color:#2a1a1a;}
+.patch-entry.fix b{color:#cc4444;}
+.patch-entry.new b{color:var(--cyn);}
+.patch-entry.story b{color:var(--pur);}
+.patch-footer{padding:9px 16px;border-top:1px solid var(--bdr);flex-shrink:0;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.patch-footer-note{color:#1a3a1a;font-size:10px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* IMPORT U1 MODAL */
+#import-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;align-items:center;justify-content:center;}
+#import-modal.open{display:flex;}
+#import-modal-inner{max-width:560px;width:90%;border:1px solid var(--cyn);background:var(--bg2);display:flex;flex-direction:column;}
+#import-modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--cyn);font-size:11px;letter-spacing:3px;color:var(--cyn);}
+#import-modal-body{padding:16px;}
+#import-modal-body p{font-size:11px;color:#2a5a5a;line-height:1.7;margin-bottom:12px;}
+#import-u1-data{width:100%;background:#030808;border:1px solid #1a3a3a;color:var(--cyn);font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px;height:120px;resize:none;outline:none;}
+#import-modal-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+
+/* MOBILE */
+@media(max-width:600px){
+  body{font-size:14px;}
+  .title-logo{letter-spacing:5px;margin-bottom:8px;}
+  #title-btns{flex-direction:column;gap:10px;width:100%;max-width:280px;}
+  .title-btn{text-align:center;padding:12px 20px;}
+  #emusoft-badge{bottom:8px;right:10px;}
+  .emusoft-art{font-size:7.5px;}
+  #game-screen{padding:0;align-items:stretch;}
+  #game-inner{border:none;}
+  #hdr{padding:6px 10px;flex-wrap:wrap;gap:4px;}
+  #hdr-title{font-size:10px;}
+  #hdr-right{gap:4px;}
+  #hdr-right .btn-sm{font-size:10px;padding:3px 6px;}
+  #hdr-name{display:none;}
+  #stats-bar{gap:8px;padding:5px 10px;}
+  .stat{font-size:11px;}
+  .hp-bar{width:50px;}
+  #needs-bar{gap:10px;padding:4px 10px;}
+  .need-lbl{font-size:10px;}
+  .need-pip,.heart-pip{width:9px;height:9px;}
+  #scene-panel{max-height:90px;}
+  #ascii-art{font-size:clamp(5px,1.8vw,8px);padding:5px 10px;}
+  #scene-title{padding:6px 10px 2px;font-size:11px;}
+  #text-area{padding:8px 12px;}
+  #text-out{font-size:13px;line-height:1.8;}
+  #choices{padding:7px 10px;gap:6px;max-height:220px;}
+  .btn{font-size:12px;padding:11px 12px;min-height:44px;letter-spacing:.5px;}
+  .btn-sm{font-size:10px;padding:4px 7px;min-height:30px;}
+  #inv-bar{padding:5px 10px;}
+  .inv-item{font-size:10px;padding:2px 5px;}
+  #combat-screen{padding:8px;}
+  #combat-inner{font-size:12px;}
+  #c-field{grid-template-columns:1fr;gap:8px;padding:10px;}
+  .vs{display:none;}
+  #c-ascii{max-height:60px;font-size:6px;}
+  #c-log{height:65px;margin:0 10px 8px;padding:5px 8px;}
+  #c-acts{padding:8px 10px 10px;}
+  #c-action-row{gap:5px;}
+  #c-action-row .btn{font-size:11px;padding:10px 8px;min-height:44px;flex:1;}
+  #shop-screen{padding:10px;}
+  #shop-list{max-height:280px;}
+  #npc-body{max-height:160px;}
+  #map-body{max-height:60vh;}
+  #log-inner{max-height:90vh;}
+  .log-tab{padding:8px 10px;}
+  .end-title{font-size:clamp(22px,9vw,38px);letter-spacing:4px;}
+  .end-text{font-size:12px;max-width:100%;}
+  #gameover-screen,#victory-screen{padding:20px 16px;}
+}
+@media(max-width:380px){
+  .title-logo{font-size:26px;letter-spacing:3px;}
+  #stats-bar{gap:5px;}
+  .stat{font-size:10px;}
+}
+</style>
+</head>
+<body>
+
+<div id="crt-scan"></div>
+<div id="crt-band"></div>
+<div id="crt-vig"></div>
+<div id="crt-glow"></div>
+<div id="notif"></div>
+<div id="combat-flash"></div>
+
+<!-- IMPORT U1 MODAL -->
+<div id="import-modal">
+  <div id="import-modal-inner">
+    <div id="import-modal-hdr">
+      <span>// IMPORT UNDERPASS 1 SAVE //</span>
+      <button class="btn btn-sm" onclick="closeImportModal()">[ CLOSE ]</button>
+    </div>
+    <div id="import-modal-body">
+      <p>Paste your exported save data from Underpass 1 below.<br>Your operative's name, level, stats, gold, and relationship with Mara will carry over.</p>
+      <textarea id="import-u1-data" placeholder="Paste save JSON here..."></textarea>
+      <div id="import-modal-actions">
+        <button class="btn cyan" onclick="processU1Import()">[ LOAD OPERATIVE ]</button>
+        <button class="btn btn-sm" onclick="closeImportModal()">[ CANCEL ]</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOT -->
+<div id="boot-overlay">
+  <div id="boot-text"></div>
+</div>
+
+<!-- TITLE -->
+<div class="screen hidden" id="title-screen">
+  <canvas id="rain-canvas"></canvas>
+  <div id="title-city"></div>
+  <div class="title-logo">UNDERPASS</div>
+  <div class="title-seq">Sequence 2: Continuation Protocol</div>
+  <div class="title-sub">// Sector 9 Terminal //</div>
+  <div id="title-btns">
+    <button class="btn primary title-btn" onclick="showNameScreen(false)">[ NEW OPERATIVE ]</button>
+    <button class="btn title-btn" onclick="showContinue()">[ CONTINUE ]</button>
+    <div id="title-btns-import">
+      <button class="btn cyan title-btn" id="import-u1-btn" onclick="openImportModal()">[ IMPORT UNDERPASS 1 SAVE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAME -->
+<div class="screen hidden" id="name-screen">
+  <div id="name-inner">
+    <div id="name-prompt">// IDENTIFY OPERATIVE //</div>
+    <input type="text" id="name-input" placeholder="ENTER NAME" maxlength="18" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="characters">
+    <br>
+    <button class="btn primary" id="name-confirm" onclick="startGame()">[ INITIALIZE ]</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen hidden" id="game-screen">
+  <div id="game-inner">
+    <div id="hdr">
+      <span id="hdr-title">UNDERPASS 2 // v1.0.1</span>
+      <span id="hdr-name"></span>
+      <div id="hdr-right">
+        <button class="btn btn-sm" onclick="openMap()">[ MAP ]</button>
+        <button class="btn btn-sm" onclick="openLog()">[ LOG ]</button>
+        <button class="btn btn-sm" onclick="saveGame()">[ SAVE ]</button>
+        <button class="btn btn-sm" onclick="openSaves()">[ COPY SAVE ]</button>
+        <button class="btn btn-sm load-btn" onclick="openSaves('load')">[ LOAD ]</button>
+      </div>
+    </div>
+    <div id="stats-bar">
+      <div class="stat">HP <div class="hp-bar"><div class="hp-fill" id="hp-fill"></div></div> <span id="hp-val"></span></div>
+      <div class="stat">ATK <span id="atk-val"></span></div>
+      <div class="stat">DEF <span id="def-val"></span></div>
+      <div class="stat">LVL <span id="lvl-val"></span></div>
+      <div class="stat">XP <span id="xp-val"></span></div>
+      <div class="stat">¢ <span id="gold-val"></span></div>
+      <div class="stat" id="kills-stat">KILLS <span id="kills-val"></span></div>
+    </div>
+    <div id="needs-bar">
+      <span class="need-lbl">HUNGER</span>
+      <div class="need-pips" id="hunger-pips"></div>
+      <span class="need-lbl">WARMTH</span>
+      <div class="need-pips" id="warmth-pips"></div>
+      <div id="mara-hearts-need">
+        <span class="need-lbl">MARA</span>
+        <div class="need-pips" id="mara-pips"></div>
+      </div>
+      <div id="status-tags"></div>
+    </div>
+    <div id="scene-panel">
+      <button id="ascii-toggle" onclick="toggleScenePanel()">[hide]</button>
+      <div id="scene-title">// ---</div>
+      <div id="ascii-art"></div>
+    </div>
+    <div id="main-panel">
+      <div id="text-area"><div id="text-out"></div></div>
+      <div id="choices"></div>
+    </div>
+    <div id="inv-bar">
+      <span id="inv-label">INV //</span>
+      <div id="inv-items"></div>
+    </div>
+  </div>
+</div>
+
+<!-- COMBAT -->
+<div class="screen hidden" id="combat-screen">
+  <div id="combat-inner">
+    <div id="c-ascii"></div>
+    <div id="c-field">
+      <div class="c-card">
+        <div class="c-name player" id="c-p-name"></div>
+        <div class="cmbt-hp-bar"><div class="cmbt-hp-fill" id="c-p-hp" style="background:var(--g);"></div></div>
+        <div class="cmbt-stats" id="c-p-stats"></div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="c-card">
+        <div class="c-name enemy" id="c-e-name"></div>
+        <div class="cmbt-hp-bar"><div class="cmbt-hp-fill" id="c-e-hp" style="background:var(--red);"></div></div>
+        <div class="cmbt-stats" id="c-e-stats"></div>
+      </div>
+    </div>
+    <div class="combo-row" id="combo-pips"></div>
+    <div id="c-log"></div>
+    <div id="c-acts">
+      <div id="c-action-row">
+        <button class="btn primary" onclick="combatAction('strike')">[ STRIKE ]</button>
+        <button class="btn" onclick="combatAction('heavy')">[ HEAVY ]</button>
+        <button class="btn" onclick="combatAction('dodge')">[ DODGE ]</button>
+        <button class="btn amber" onclick="combatAction('item')">[ ITEM ]</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NPC -->
+<div class="screen hidden" id="npc-screen">
+  <div id="npc-inner">
+    <div id="npc-hdr">
+      <span id="npc-hdr-title">// NPC //</span>
+      <button class="btn btn-sm" onclick="closeNPC()">[ LEAVE ]</button>
+    </div>
+    <div id="npc-portrait"></div>
+    <div id="npc-meta">
+      <span id="npc-name-display"></span>
+      <span id="npc-rel"></span>
+    </div>
+    <div id="npc-body"></div>
+    <div id="npc-choices"></div>
+  </div>
+</div>
+
+<!-- SHOP -->
+<div class="screen hidden" id="shop-screen">
+  <div id="shop-inner">
+    <div id="shop-hdr">
+      <span>// BLACK MARKET //</span>
+      <span id="shop-gold"></span>
+    </div>
+    <div id="shop-list"></div>
+    <div style="padding:10px;border-top:1px solid #1a1000;display:flex;justify-content:flex-end;">
+      <button class="btn btn-sm" onclick="closeShop()">[ LEAVE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCAVENGE -->
+<div class="screen hidden" id="scav-screen">
+  <div id="scav-inner">
+    <div id="scav-hdr">
+      <span id="scav-title">// SCAVENGE //</span>
+      <span id="scav-depth-lbl" style="font-size:10px;color:#3a2a00;"></span>
+    </div>
+    <div id="scav-body"></div>
+    <div id="scav-choices"></div>
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="map-screen" class="hidden">
+  <div id="map-inner">
+    <div id="map-hdr"><span>// SECTOR MAP //</span><button class="btn btn-sm" onclick="closeMap()">[ CLOSE ]</button></div>
+    <div id="map-body"></div>
+  </div>
+</div>
+
+<!-- LOG -->
+<div id="log-screen" class="hidden">
+  <div id="log-inner">
+    <div id="log-hdr"><span>// MISSION LOG //</span><button class="btn btn-sm" onclick="closeLog()">[ CLOSE ]</button></div>
+    <div id="log-tabs">
+      <button class="log-tab active" onclick="switchLogTab('story')">STORY</button>
+      <button class="log-tab" onclick="switchLogTab('kills')">KILLS</button>
+      <button class="log-tab" onclick="switchLogTab('notes')">INTEL</button>
+    </div>
+    <div id="log-body"></div>
+  </div>
+</div>
+
+<!-- SAVES -->
+<div class="screen hidden" id="saves-screen" style="z-index:80;">
+  <div id="saves-inner" style="max-width:560px;width:100%;border:1px solid var(--bdr);background:var(--bg2);display:flex;flex-direction:column;overflow:hidden;max-height:88vh;">
+    <div style="padding:9px 16px;border-bottom:1px solid var(--bdr);font-size:11px;letter-spacing:3px;color:var(--cyn);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <span>// SAVE DATA //</span>
+      <button class="btn btn-sm" onclick="closeSaves()">[ CLOSE ]</button>
+    </div>
+    <div id="saves-tabs" style="display:flex;border-bottom:1px solid var(--bdr);flex-shrink:0;">
+      <button class="log-tab active" id="saves-tab-slots" onclick="switchSavesTab('slots')">SAVE SLOTS</button>
+      <button class="log-tab" id="saves-tab-import" onclick="switchSavesTab('import')">IMPORT SAVE</button>
+    </div>
+    <div id="saves-body" style="flex:1;overflow-y:auto;padding:12px;"></div>
+    <div style="padding:9px 16px;border-top:1px solid var(--bdr);font-size:9px;color:#1a3a1a;letter-spacing:1px;flex-shrink:0;">// PASTE EXPORTED DATA INTO IMPORT TAB TO LOAD ACROSS DEVICES //</div>
+  </div>
+</div>
+
+<!-- VICTORY -->
+<div class="screen hidden" id="victory-screen">
+  <pre class="end-ascii" id="vic-ascii"></pre>
+  <div class="end-title victory-title">EXTRACTED</div>
+  <div class="end-text" id="vic-text"></div>
+  <div class="end-stats" id="vic-stats"></div>
+  <button class="btn primary end-btn" onclick="restartGame()">[ PLAY AGAIN ]</button>
+</div>
+
+<!-- GAMEOVER -->
+<div class="screen hidden" id="gameover-screen">
+  <pre class="end-ascii" id="go-ascii"></pre>
+  <div class="end-title gameover-title">FLATLINED</div>
+  <div class="end-text" id="go-text"></div>
+  <button class="btn danger end-btn" onclick="restartGame()">[ TRY AGAIN ]</button>
+</div>
+
+<!-- PATCH NOTES -->
+<div class="screen hidden" id="patch-screen">
+  <div id="patch-inner">
+    <div id="patch-hdr">
+      <span>// PATCH NOTES //</span>
+      <button class="btn btn-sm" onclick="closePatchNotes()">[ CLOSE ]</button>
+    </div>
+    <div id="patch-body">
+      <div class="patch-version">
+        <div class="patch-ver-label">v1.0.1 <span>current build</span></div>
+        <div class="patch-entry fix"><b>FIX</b> EmuSoft badge and patch notes button now correctly hide when in-game — animation was overriding opacity; resolved with animation:none on body.in-game</div>
+        <div class="patch-entry fix"><b>FIX</b> Import Underpass 1 Save button now sits centred on its own row below the two main title buttons</div>
+        <div class="patch-entry fix"><b>FIX</b> Title screen text reordered — UNDERPASS logo first, Sequence 2: Continuation Protocol below, // Sector 9 Terminal // as footer line</div>
+        <div class="patch-entry fix"><b>FIX</b> Mara's Flask description updated to "From Sector 9. +8 HP." — acknowledges U1 origin rather than generic flavour text</div>
+      </div>
+      <div class="patch-version">
+        <div class="patch-ver-label">v1.0.0</div>
+        <div class="patch-entry new"><b>NEW</b> Underpass 2 — full sequel, picks up directly after Sector 9 extraction</div>
+        <div class="patch-entry new"><b>NEW</b> Import save from Underpass 1 — name, level, gold, kills and Mara relationship carry over</div>
+        <div class="patch-entry new"><b>NEW</b> Mara returns as primary contact and potential companion</div>
+        <div class="patch-entry new"><b>NEW</b> Nakamura-Ω — resurrected as a cybernetic apex predator, Helios Project REVENANT</div>
+        <div class="patch-entry new"><b>NEW</b> 25 story nodes across 4 acts — transit hub, street level, the Spire, deep infrastructure</div>
+        <div class="patch-entry new"><b>NEW</b> New enemies: street agents, drones, Revenant guards, and the final NAKAMURA-Ω encounter</div>
+        <div class="patch-entry new"><b>NEW</b> Legacy import bonus: U1 veterans start with stat bonuses scaled to carried level</div>
+        <div class="patch-entry story"><b>STORY</b> The data transmission changes everything — and someone powerful wants it buried</div>
+      </div>
+    </div>
+    <div class="patch-footer">
+      <span class="patch-footer-note">// EMUSOFT SECTOR SYSTEMS DIVISION //</span>
+      <button class="btn btn-sm" onclick="closePatchNotes()">[ CLOSE ]</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  UNDERPASS 2 — DATA                                  ║
+// ╚══════════════════════════════════════════════════════╝
+
+const GAME = {};
+
+GAME.ITEMS = {
+  utility_knife:  {name:"Utility Knife",   icon:"⚔",  desc:"+3 ATK (equip)",       attack:3,  type:"weapon"},
+  combat_blade:   {name:"Combat Blade",    icon:"◆",  desc:"+6 ATK (equip)",       attack:6,  type:"weapon"},
+  spire_blade:    {name:"Spire Blade",     icon:"▲",  desc:"+9 ATK (equip)",       attack:9,  type:"weapon"},
+  medkit:         {name:"Medkit",          icon:"✚",  desc:"Restore 25 HP",        heal:25,   type:"consumable"},
+  power_cell:     {name:"Power Cell",      icon:"◉",  desc:"Restore 15 HP",        heal:15,   type:"consumable"},
+  stims:          {name:"Combat Stims",    icon:"↑",  desc:"+6 ATK / 3 turns",     type:"consumable", tempAtk:6, tempTurns:3},
+  body_armor:     {name:"Body Armor",      icon:"◈",  desc:"+4 DEF (equip)",       defense:4, type:"armor"},
+  hardplate:      {name:"Hardplate",       icon:"▣",  desc:"+7 DEF (equip)",       defense:7, type:"armor"},
+  scrambler:      {name:"EMP Scrambler",   icon:"⚡", desc:"Stuns augmented",      type:"key"},
+  ghost_chip:     {name:"Ghost Chip",      icon:"◑",  desc:"35% dodge, 2 turns",   type:"consumable", dodge:true, dodgeTurns:2},
+  adrenaline:     {name:"Adrenaline",      icon:"▲",  desc:"+4 ATK + 10 HP",       heal:10,   type:"consumable", tempAtk:4, tempTurns:2},
+  biometric_cloak:{name:"Biometric Cloak", icon:"░",  desc:"Bypass one guard scan",type:"key"},
+  neural_jack:    {name:"Neural Jack",     icon:"◎",  desc:"+2 ATK permanent",     attack:2,  type:"weapon"},
+  data_shard:     {name:"Data Shard",      icon:"▣",  desc:"The original — still live",type:"key"},
+  mara_flask:     {name:"Mara's Flask",    icon:"♥",  desc:"From Sector 9. +8 HP.",  heal:8,    type:"consumable"},
+  revenant_key:   {name:"Revenant Key",    icon:"☠",  desc:"Access — Project REVENANT",type:"key"},
+  overclock_chip: {name:"Overclock Chip",  icon:"◈",  desc:"+8 ATK, -5 HP recoil", type:"consumable", tempAtk:8, tempTurns:4, recoil:5},
+  breacher:       {name:"Breacher",        icon:"◇",  desc:"Opens hardened locks", type:"key"},
+  wire_cutters:   {name:"Wire Cutters",    icon:"✂",  desc:"Opens passages",       type:"key"},
+};
+
+GAME.SHOP_STOCK = [
+  {id:"medkit",      cost:40},
+  {id:"power_cell",  cost:25},
+  {id:"stims",       cost:55},
+  {id:"ghost_chip",  cost:70},
+  {id:"body_armor",  cost:80},
+  {id:"adrenaline",  cost:50},
+  {id:"combat_blade",cost:90},
+  {id:"overclock_chip",cost:120},
+  {id:"hardplate",   cost:140},
+];
+
+GAME.ENEMIES = {
+  street_agent:  {name:"Helios Agent",      hp:24,maxHp:24,atk:7, def:2,gold:20,xp:35, desc:"Plainclothes. Watching."},
+  drone:         {name:"Patrol Drone",      hp:18,maxHp:18,atk:9, def:3,gold:15,xp:30, desc:"Silent. Persistent.",augmented:true},
+  enforcer:      {name:"Corp Enforcer",     hp:45,maxHp:45,atk:10,def:5,gold:60,xp:80, desc:"Augmented. Ruthless.",augmented:true},
+  revenant_guard:{name:"Revenant Guard",    hp:55,maxHp:55,atk:12,def:6,gold:80,xp:100,desc:"Project REVENANT unit.",augmented:true},
+  assassin:      {name:"Ghost Operative",   hp:35,maxHp:35,atk:13,def:4,gold:55,xp:90, desc:"Hired. Silent.",canBleed:true},
+  spire_elite:   {name:"Spire Elite",       hp:50,maxHp:50,atk:11,def:7,gold:70,xp:95, desc:"Top floor security."},
+  nakamura_omega:{name:"NAKAMURA-Ω",        hp:120,maxHp:120,atk:18,def:8,gold:300,xp:500,desc:"He came back. He always comes back.",augmented:true,rageThreshold:60,canBleed:false},
+};
+
+GAME.COMBAT_ASCII = {
+  street_agent:`  ░░░░░░░░░\n ░ ·      · ░\n ░  ──────  ░  [AGENT]\n  ░░░░░░░░░\n    ╲  ╱\n     ╲╱`,
+  drone:`   ╔═════╗\n ══╣ ◉ ◉ ╠══  [DRONE]\n   ╚══╦══╝\n    ╠═╣\n  ──╩─╩──`,
+  enforcer:`  ╔════════╗\n  ║ ■■  ■■ ║\n  ║  ════  ║  [ENFORCER]\n  ╠════════╣\n  ╠════════╣\n ╱          ╲`,
+  revenant_guard:`  ╔══════════╗\n  ║ ▓■    ■▓ ║\n  ║  ══════  ║  [REVENANT]\n  ╠══════════╣\n  ║ ▓▓▓▓▓▓▓▓ ║\n  └──┤    ├──┘`,
+  assassin:`  ░░░░░░░░░\n ░░ ·    · ░░\n ░░  ────  ░░  [OPERATIVE]\n  ░░░░░░░░░\n    ╲  ╱\n     ╲╱`,
+  spire_elite:`  ╔══════════╗\n  ║ ◈■    ■◈ ║\n  ║  ══════  ║  [ELITE]\n  ╠══════════╣\n ╱            ╲`,
+  nakamura_omega:`  ╔══════════════╗\n  ║ ▓▓■      ■▓▓ ║\n  ║   ════════   ║  [NAKAMURA-Ω]\n  ╠══════════════╣\n  ║ ▓▓▓▓▓▓▓▓▓▓▓▓ ║\n  ║ ╠══════════╣  ║\n  ╚══╣        ╠══╝`,
+};
+
+GAME.ASCII_FB = {
+  transit_hub:
+`  TRANSIT HUB · SECTOR 9 SURFACE
+  [gate]  [gate]  [gate]  [gate]
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  ──── platforms ─── exits ────`,
+
+  street_level:
+`  S T R E E T   L E V E L
+  neon │ smoke │ surveillance
+  ────────[CAM]──────────────
+  · · · above ground · · ·`,
+
+  mara_safehouse_2:
+`  ┌──────────────────┐
+  │  ◉ SAFEHOUSE ◉  │
+  │   [locked door]  │
+  └──────────────────┘
+  // signal jammers active //`,
+
+  market_district:
+`  BLACK MARKET · DISTRICT 4
+  [stall] [stall] [stall]
+  ░ goods ░ rumours ░ risk ░
+  ──────── stay low ────────`,
+
+  helios_tower_ext:
+`  H E L I O S   T O W E R
+  ╔════════════════════╗
+  ║   ■  SPIRE  ■     ║
+  ╚════╦══════╦════════╝
+  ─────╨──────╨────────`,
+
+  spire_lobby:
+`  SPIRE LOBBY · FLOOR 1
+  ╔══════════════╗
+  ║ ◈ SECURITY ◈ ║
+  ║   scanners   ║
+  ╚══════════════╝`,
+
+  spire_server:
+`  ╔═══════════════════╗
+  ║  S E R V E R S   ║
+  ║  ████████████████ ║
+  ║  PROJECT REVENANT ║
+  ╚═══════════════════╝`,
+
+  spire_roof:
+`  ── R O O F  A C C E S S ──
+  wind · rain · 40 floors up
+  ──────[edge]───────────────
+  · · · no way back · · ·`,
+
+  terminal_room:
+`  ┌──────────────────┐
+  │  ◎ TERMINAL ◎   │
+  │  > legacy net _  │
+  │                  │
+  └──────────────────┘`,
+
+  revenant_lab:
+`  PROJECT REVENANT · LAB B4
+  ╔══════════════════════╗
+  ║ [POD] [POD] [■POD■]  ║
+  ║   reconstruction bay ║
+  ╚══════════════════════╝`,
+
+  final_roof:
+`  ┌─── ROOF · FINAL ───┐
+  │  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+  │  ▓ NAKAMURA-Ω  ▓  │
+  │  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+  └────────────────────┘`,
+
+  extraction_point:
+`  ── E X T R A C T I O N ──
+  [transport] [transport]
+  ──────── runway ──────────
+  · · · get out · · ·`,
+
+  default:
+`  S E C T O R   9
+  · · · ─── · · ·
+  underground operations
+  · · · ─── · · ·`,
+};
+
+GAME.MAP_ZONES = [
+  {name:"// SECTOR SURFACE", nodes:["transit_hub","street_level","market_district"]},
+  {name:"// MARA NETWORK",   nodes:["mara_safehouse_2","terminal_room"]},
+  {name:"// HELIOS SPIRE",   nodes:["helios_tower_ext","spire_lobby","spire_server","spire_roof","revenant_lab"]},
+  {name:"// ENDGAME",        nodes:["final_roof","extraction_point"]},
+];
+GAME.NODE_NAMES = {
+  transit_hub:"Transit Hub",street_level:"Street Level",market_district:"Market District",
+  mara_safehouse_2:"Mara's Safehouse",terminal_room:"Legacy Terminal",
+  helios_tower_ext:"Helios Tower",spire_lobby:"Spire Lobby",spire_server:"Server Floor",
+  spire_roof:"Spire Roof",revenant_lab:"Lab B4 — REVENANT",
+  final_roof:"Roof — Final",extraction_point:"Extraction Point",
+};
+
+GAME.SCAV_EVENTS = [
+  {text:"A maintenance locker, pried open. Inside: sealed rations and a damp medkit.",items:["medkit"],gold:0},
+  {text:"A dead corporate drone on the ground. Its power cell still active.",items:["power_cell"],gold:0},
+  {text:"A wallet, left in a hurry. Cash still inside.",items:[],gold:35},
+  {text:"A service panel hides a weapon cache. Someone was prepared.",items:["stims"],gold:0},
+  {text:"Nothing. Just the sound of the city consuming itself.",items:[],gold:0},
+  {text:"A locked case. You break it open. Combat hardware inside.",items:["combat_blade"],gold:0},
+  {text:"A courier bag, abandoned. The delivery never made it.",items:[],gold:60},
+  {text:"A cracked data terminal. You pull the chip before it dies.",items:["neural_jack"],gold:0},
+];
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  UNDERPASS 2 — STORY                                 ║
+// ╚══════════════════════════════════════════════════════╝
+
+GAME.STORY = {
+
+  start:{
+    title:"// ACT ONE — SURFACE",
+    ascii:"transit_hub",
+    text:`Six hours since the bridge.
+
+The data is live. You checked three times. Six feeds, forty-seven journalists, eight hours of uninterrupted transmission before Helios could even begin to respond.
+
+Sector 9 knows. The city knows. Whether it matters is someone else's problem now.
+
+You're at the surface transit hub — noise and fluorescence and people who don't yet know what changed last night. You need to move. Helios will have face-matching on every camera in this grid within the hour.
+
+Your burner terminal buzzes. No sender ID. Just coordinates and two words:
+
+FIND ME. — M`,
+    choices:[
+      {text:"Head for the street exit",        next:"street_level"},
+      {text:"Check the black market stalls",   next:"market_district"},
+      {text:"Scavenge the transit maintenance bay", next:"scav_transit"},
+    ],
+  },
+
+  scav_transit:{
+    title:"// MAINTENANCE BAY",
+    ascii:"default",
+    text:`The maintenance bay is unguarded — a roll-up door, left open. Fluorescent strip lights, three of them dead. The smell of hydraulic fluid and rust.
+
+You work fast.`,
+    scavenge:true,
+    choices:[{text:"Head for the street exit", next:"street_level"}],
+  },
+
+  street_level:{
+    title:"// STREET LEVEL — SECTOR 9",
+    ascii:"street_level",
+    text:`Above ground feels wrong. Too much sky. Too many cameras.
+
+The morning news cycle is already fragmenting — corporate feeds running denial loops, independent feeds running the data. You catch a headline on a shopfront screen:
+
+HELIOS SYSTEMS DENIES TRIAL ALLEGATIONS — SECTOR 9 DATA "FABRICATED"
+
+Then the shopfront goes dark. Someone cut the feed.
+
+A man in grey clothes clocks you from across the street. Doesn't look away.`,
+    choices:[
+      {text:"Move fast — lose him in the crowd",    next:"street_pursuit"},
+      {text:"Go for Mara's coordinates",             next:"mara_approach"},
+      {text:"Check the market district first",       next:"market_district"},
+    ],
+  },
+
+  street_pursuit:{
+    title:"// PURSUIT",
+    ascii:"street_level",
+    text:`You move into the crowd, cutting through a covered market, doubling back through an alley between two apartment blocks.
+
+He keeps pace. Earpiece. Tailored jacket. He's Helios.
+
+The alley dead-ends at a service door. You have about four seconds.`,
+    choices:[
+      {text:"Turn and face him",  next:"fight_agent_street", combat:"street_agent"},
+      {text:"Break through the service door", next:"market_district", flag:"broke_door"},
+    ],
+  },
+
+  fight_agent_street:{
+    title:"// CONTACT",
+    ascii:"street_level",
+    text:`The agent closes the distance fast. Trained. Efficient. But you've been running on instinct since the underpass.
+
+He reaches for his radio. You reach for him first.`,
+    choices:[{text:"Engage", next:"post_agent_fight", combat:"street_agent"}],
+  },
+
+  post_agent_fight:{
+    title:"// CLEAR",
+    ascii:"street_level",
+    text:`He's down. You strip his earpiece — standard Helios comms. Still live.
+
+"...confirm shadow on transit grid. Last ping: sector surface. All units rotate."
+
+They're already on you.
+
+You break the earpiece and go.`,
+    items:["power_cell"],
+    gold:20,
+    choices:[{text:"Get to Mara", next:"mara_approach"}],
+  },
+
+  market_district:{
+    title:"// MARKET DISTRICT",
+    ascii:"market_district",
+    text:`District 4's black market occupies three floors of a condemned residential block. The ground floor traders don't ask questions. The upper floors answer them, for a price.
+
+A vendor you recognize from the tunnels nods you toward a side booth.
+
+"You're famous," he says quietly. "That's not a compliment."`,
+    choices:[
+      {text:"Browse the market",            next:"shop", shop:true},
+      {text:"Head for Mara's coordinates",  next:"mara_approach"},
+      {text:"Ask about Helios activity",    next:"market_intel"},
+    ],
+  },
+
+  market_intel:{
+    title:"// MARKET INTEL",
+    ascii:"market_district",
+    text:`The vendor keeps his voice low, eyes on the entrance.
+
+"They pulled three of mine this morning. Asking about anyone new to surface. Anyone from the tunnel network."
+
+He slides something across the counter — a biometric cloak, folded small.
+
+"Camera-grade. Two hours active. After that it burns out." He shakes his head. "Don't come back here. Not while they're watching."`,
+    items:["biometric_cloak"],
+    choices:[{text:"Get to Mara", next:"mara_approach"}],
+  },
+
+  mara_approach:{
+    title:"// APPROACH — MARA",
+    ascii:"mara_safehouse_2",
+    text:`The coordinates lead to a fourth-floor flat in a mixed-use block — the kind of building that has six different owners and no one responsible for the hallway lighting.
+
+Signal jammer on the door frame. Her work.
+
+The door opens before you knock.`,
+    choices:[{text:"Go in", next:"mara_reunion"}],
+  },
+
+  mara_reunion:{
+    title:"// REUNION",
+    ascii:"mara_safehouse_2",
+    text:`She looks like she hasn't slept. She looks like she was expecting that.
+
+The flat is small — a mattress, a workbench covered in screens, three burner phones in a line. A coffee press, still warm.
+
+"You made it," she says. Not a question. She hands you a cup.
+
+She doesn't hug you. She does stand close.
+
+"Six feeds are still live. Two more picked it up overnight." She turns back to the screens. "But that's not why I called you here."
+
+She pulls up a file. Internal Helios document. Stamped six weeks ago.
+
+PROJECT REVENANT — PHASE 2. AUTHORIZED.
+
+"They're rebuilding him," she says.
+
+The attached image loads slowly.
+
+It's Nakamura. What's left of him. On a table. Surrounded by machinery that has no interest in what he wanted to be.
+
+"Except this time they didn't leave anything human in the design brief."`,
+    choices:[
+      {text:"\"How long do we have?\"",          next:"mara_briefing"},
+      {text:"\"Who authorized it?\"",             next:"mara_briefing", flag:"asked_auth"},
+      {text:"Talk to Mara",                       npc:"mara"},
+    ],
+  },
+
+  mara_briefing:{
+    title:"// BRIEFING",
+    ascii:"mara_safehouse_2",
+    text:`"The project went active the moment the data hit the feeds. They need to shut down the source — which means us — before the story gets traction."
+
+She pulls up a building schematic. The Helios tower. The Spire.
+
+"The resurrection lab is in sub-basement four. If we can get in and pull the core memory unit before the process completes, REVENANT dies on the table."
+
+She looks at you.
+
+"The window is narrow. The building has one known access point that isn't hardened." She marks it on the schematic. "The loading bay. Tonight."
+
+She slides the schematic across.
+
+"You don't have to do this."
+
+She means it. That's the problem.`,
+    choices:[
+      {text:"\"I'm in.\"",                               next:"pre_spire"},
+      {text:"\"Tell me more about the building.\"",     next:"mara_spire_intel"},
+      {text:"Talk to Mara first",                       npc:"mara"},
+    ],
+  },
+
+  mara_spire_intel:{
+    title:"// SPIRE INTEL",
+    ascii:"mara_safehouse_2",
+    text:`She walks you through it.
+
+"Forty floors. Security desks at one, twenty, and forty. Server infrastructure on thirty-eight. The REVENANT lab is below ground — sub-basement four, accessible only from a hardened internal elevator."
+
+She taps the schematic.
+
+"The elevator requires a biometric key pulled from a Revenant Guard unit. They rotate on the surface entrance — loading bay, 0200 to 0600."
+
+She pauses.
+
+"There's also a legacy terminal on sub-basement two. Pre-Helios infrastructure — theoretically disconnected from the main net. I want whatever's on it."
+
+She refills your coffee. Says nothing. Lets the silence do the work.`,
+    items:["breacher"],
+    choices:[
+      {text:"\"I'm in. Let's go tonight.\"", next:"pre_spire"},
+      {text:"Talk to Mara",                  npc:"mara"},
+    ],
+  },
+
+  pre_spire:{
+    title:"// 0130 — LOADING BAY",
+    ascii:"helios_tower_ext",
+    text:`The Spire rises out of the sector like something that lost interest in the people below it. Glass and steel, forty floors, every window lit.
+
+The loading bay sits on the north face. One guard on the exterior. Two more inside. You wait.
+
+At 0147, the exterior guard moves to the far corner for his scheduled check.
+
+You have ninety seconds.`,
+    choices:[
+      {text:"Move in fast",    next:"spire_lobby"},
+      {text:"Take out the exterior guard first", next:"fight_entry_guard", combat:"street_agent"},
+    ],
+  },
+
+  fight_entry_guard:{
+    title:"// SILENT TAKEDOWN",
+    ascii:"helios_tower_ext",
+    text:`Silent. Efficient. You lower him behind a service unit.
+
+He has a keycard. Useful.`,
+    items:["power_cell"],
+    gold:15,
+    choices:[{text:"Move into the building", next:"spire_lobby"}],
+  },
+
+  spire_lobby:{
+    title:"// SPIRE LOBBY",
+    ascii:"spire_lobby",
+    text:`The lobby is marble and surveillance. Every surface reflects. Three cameras, two desk guards in the glass booth at the far end.
+
+The elevator bank is beyond the security checkpoint. The stairwell access is to your left — maintenance door, card reader.
+
+You can hear the desk guards talking. Something about the data feeds. One of them sounds angry. The other sounds like he stopped caring about this job a long time ago.`,
+    choices:[
+      {text:"Use the biometric cloak to walk past security",   next:"spire_upper", flag:"used_cloak", requires:"biometric_cloak"},
+      {text:"Take the maintenance stairs",                     next:"spire_upper"},
+      {text:"Create a distraction and move fast",              next:"spire_fight_lobby", combat:"enforcer"},
+    ],
+  },
+
+  spire_fight_lobby:{
+    title:"// LOBBY BREACH",
+    ascii:"spire_lobby",
+    text:`You pull the fire suppression panel. White haze fills the lobby. The guards react on instinct — one moves toward the panel, one moves toward the door.
+
+The second one finds you instead.`,
+    choices:[{text:"Fight through", next:"spire_upper", combat:"enforcer"}],
+  },
+
+  spire_upper:{
+    title:"// UPPER FLOORS",
+    ascii:"spire_server",
+    text:`You take the stairs. Eighteen floors. The building hums with server infrastructure — every floor above thirty vibrates faintly with heat and computation.
+
+Floor thirty-eight is the server room. You need the loading manifest for sub-basement four — and the legacy terminal is two floors below ground.
+
+A Revenant Guard unit is stationed at the B4 elevator. You can hear it from the stairwell.`,
+    choices:[
+      {text:"Hit the legacy terminal first — B2",   next:"terminal_room_entry"},
+      {text:"Take down the Revenant Guard for the key", next:"fight_revenant_guard", combat:"revenant_guard"},
+      {text:"Search the server floor for intel",    next:"spire_server_search"},
+    ],
+  },
+
+  spire_server_search:{
+    title:"// SERVER FLOOR",
+    ascii:"spire_server",
+    text:`Racks of hardware, floor to ceiling. Cooling units that sound like breathing. You move between them quickly.
+
+On a workstation left unlocked: PROJECT REVENANT status reports. Phase completion at 78%. Estimated activation: 36 hours from the timestamp.
+
+There's also a personnel file — NAKAMURA, D. — updated post-mortem. Under NOTES, someone typed: *he asked for it*.
+
+You don't know what that means. You're not sure you want to.
+
+You find the B4 access manifest. And something else — a Spire Elite steps out from behind a rack.`,
+    choices:[{text:"Fight", next:"post_server_fight", combat:"spire_elite"}],
+  },
+
+  post_server_fight:{
+    title:"// CLEAR",
+    ascii:"spire_server",
+    text:`She's down. The floor is quiet again.
+
+You take her access chip and keep moving.`,
+    items:["overclock_chip"],
+    choices:[
+      {text:"Hit the legacy terminal — B2",                  next:"terminal_room_entry"},
+      {text:"Go straight for the Revenant Guard at B4",      next:"fight_revenant_guard", combat:"revenant_guard"},
+    ],
+  },
+
+  terminal_room_entry:{
+    title:"// SUB-BASEMENT 2 — LEGACY TERMINAL",
+    ascii:"terminal_room",
+    text:`The terminal room predates the Spire by fifteen years. Old hardware, dust-covered. Someone ran a single ethernet cable through the ceiling — connected to nothing anymore.
+
+The terminal boots in twelve seconds. The interface is text-only.
+
+> HELIOS LEGACY NET v2.3 — AUTHORIZED ACCESS ONLY
+
+You run a bypass. It takes four minutes and leaves you sweating.
+
+The system opens. You find old partition files — financial projections, trial simulations, Sector 9 population data going back a decade.
+
+And then, buried in a deprecated comms directory: an open channel. Still live. Tagged: EXECUTIVE PRIORITY LINE.
+
+You shouldn't. You do.`,
+    flag:"found_terminal",
+    choices:[
+      {text:"Dial the executive line",     next:"easter_egg_call"},
+      {text:"Skip it — go for B4",         next:"fight_revenant_guard", combat:"revenant_guard"},
+    ],
+  },
+
+  easter_egg_call:{
+    title:"// EXECUTIVE PRIORITY LINE",
+    ascii:"terminal_room",
+    text:`Three rings. Four. You expect a dead line.
+
+Someone picks up.
+
+A pause. Then a voice — clipped, furious, accustomed to being obeyed:
+
+"Oh? A wise guy, huh? Look, I'm tracing you right now, pal. We'll see how smart you feel with internal security all over your fricking ass. Dickhead!
+
+The President of the Global-fucking-Government. Who'd you think I was talking about? Who the fu — Who is — What — I should kick your fucking ass, who is this?"
+
+The line goes dead.
+
+You sit with that for a moment.
+
+Then you close the terminal and go do something useful.`,
+    choices:[
+      {text:"Go find the Revenant Guard", next:"fight_revenant_guard", combat:"revenant_guard"},
+    ],
+  },
+
+  fight_revenant_guard:{
+    title:"// B4 ELEVATOR — REVENANT GUARD",
+    ascii:"revenant_lab",
+    text:`The guard is stationed at the B4 elevator — heavy augmentation, Helios combat chassis. Notices you at twenty meters.
+
+Doesn't say anything. Just moves.`,
+    choices:[{text:"Fight", next:"post_revenant_guard", combat:"revenant_guard"}],
+  },
+
+  post_revenant_guard:{
+    title:"// KEY ACQUIRED",
+    ascii:"revenant_lab",
+    text:`You pull the biometric key from the guard's wrist unit.
+
+The elevator opens.
+
+Sub-basement four is quiet in the way that means something is very wrong.`,
+    items:["revenant_key"],
+    choices:[{text:"Go down", next:"revenant_lab_entry"}],
+  },
+
+  revenant_lab_entry:{
+    title:"// PROJECT REVENANT — LAB B4",
+    ascii:"revenant_lab",
+    text:`The lab is cold. Not cool — cold. Industrial cold. The kind that exists to keep biological material stable.
+
+Three pods line the far wall. Two are empty.
+
+The third is not.
+
+He's larger than before. The surgical modifications extend beyond the original frame — reinforced plating where skin should be, optical augmentation that catches the light wrong, hydraulic assists along the spine and shoulders that make him look like something assembled rather than rebuilt.
+
+His eyes open.
+
+They're the same. That's the worst part. Behind everything they did to him: the same.
+
+"I remember you," he says. His voice is distorted by a laryngeal implant. It sounds like two people speaking at slightly different times.
+
+"I remember the bridge."
+
+He steps out of the pod. The floor shudders.
+
+"They told me I asked for this." A pause. "Maybe I did."`,
+    choices:[
+      {text:"\"Then let it end here.\"",             next:"final_fight", combat:"nakamura_omega"},
+      {text:"\"Nakamura — you don't have to do this.\"", next:"nakamura_confront"},
+    ],
+  },
+
+  nakamura_confront:{
+    title:"// LAST WORDS",
+    ascii:"revenant_lab",
+    text:`He stops. Not because of what you said. Because something in him is calculating whether it matters.
+
+"They gave me a directive when I came back online," he says. "Terminate the data source. Recover the shard. Return the sector to prior operating conditions."
+
+A pause.
+
+"Prior operating conditions." He looks at his hands — the left one almost entirely mechanical. "That's what they're calling it."
+
+He looks at you.
+
+"The data is already out," you say. "Killing me doesn't put it back."
+
+Something moves behind his eyes. Not humanity. Doubt.
+
+"No," he says. "But it's what I have."
+
+He comes at you.`,
+    choices:[{text:"Fight", next:"final_fight", combat:"nakamura_omega"}],
+  },
+
+  final_fight:{
+    title:"// FINAL CONFRONTATION",
+    ascii:"final_roof",
+    text:`The fight moves up — through the lab, into the elevator shaft, out through an emergency exit onto the roof.
+
+Forty floors above Sector 9. Rain. The city spread out below, glowing with everything it doesn't know yet.
+
+He doesn't stop. That's what they built into him — the inability to stop.
+
+You have to be the thing that stops.`,
+    choices:[{text:"End this", next:"victory", combat:"nakamura_omega"}],
+  },
+
+  victory:{
+    title:"// SEQUENCE COMPLETE",
+    ascii:"extraction_point",
+    text:`NAKAMURA-Ω is down.
+
+Not dead. You don't think that word applies anymore. But down. Offline. The hydraulics have gone quiet. The optical rigs are dark.
+
+You stand on the roof of the Helios Spire in the rain, forty floors above the sector that made you, and you breathe.
+
+Your terminal buzzes.`,
+    victory:true,
+    choices:[],
+  },
+
+};
+
+// ─── NPCs ─────────────────────────────────────────────────────────────────────
+GAME.NPCS = {
+  mara:{
+    name:"Mara",
+    portraits:{
+      0:`  ╔══════╗\n  ║ ·  · ║\n  ║  ──  ║\n  ╚══════╝\n  [guarded]`,
+      1:`  ╔══════╗\n  ║ ·  · ║\n  ║  ──  ║\n  ╚══════╝\n  [focused]`,
+      3:`  ╔══════╗\n  ║ ·  · ║\n  ║  ╌──╌ ║\n  ╚══════╝\n  [trusts you]`,
+      4:`  ╔══════╗\n  ║ ·  · ║\n  ║  ~~~  ║\n  ╚══════╝\n  [something real]`,
+    },
+    greetings:{
+      0:`She looks up from the screens.\n\n"The data is holding. Five feeds still live." A pause. "I didn't think you'd actually make it out."`,
+      1:`"I've been tracking Helios comms since 0400. They're scared." She almost smiles. "Good."`,
+      3:`She doesn't look up when you come in, but she stops typing.\n\n"I've been thinking about what you said. On the bridge." She restarts her typing. "Don't ask me about it yet."`,
+      4:`She passes you a coffee without looking away from the screens. She remembered how you take it.\n\n"We're going to win this," she says. "I just wanted to say that out loud."`,
+    },
+    options:{
+      0:[
+        {text:"\"What do we know about REVENANT?\"",  rel:0, dialogue:"revenant_info"},
+        {text:"\"Are you safe here?\"",               rel:1, dialogue:"safe_here", flag:"asked_safe"},
+        {text:"\"I'm ready to move.\"",               rel:0, next:"pre_spire", close:true},
+      ],
+      1:[
+        {text:"\"What happens if we fail?\"",         rel:0, dialogue:"if_fail"},
+        {text:"\"Tell me about yourself.\"",          rel:1, dialogue:"about_mara", flag:"asked_mara"},
+        {text:"\"I saw your brother's name in the files.\"", rel:1, dialogue:"brother", flag:"saw_brother"},
+        {text:"Head to the Spire",                    rel:0, next:"pre_spire", close:true},
+      ],
+      3:[
+        {text:"\"How are you holding up?\"",          rel:1, dialogue:"holding_up"},
+        {text:"\"I'm glad you called me.\"",          rel:1, dialogue:"glad_called", romance:true, flag:"glad_called"},
+        {text:"Head to the Spire",                    rel:0, next:"pre_spire", close:true},
+      ],
+      4:[
+        {text:"\"After this — where do you go?\"",   rel:1, dialogue:"after_this", romance:true, flag:"after_this"},
+        {text:"\"Come with me.\"",                   rel:1, dialogue:"come_with", romance:true, flag:"come_with"},
+        {text:"Head to the Spire",                   rel:0, next:"pre_spire", close:true},
+      ],
+    },
+    dialogues:{
+      revenant_info:`"Nakamura was declared dead on the bridge — his body recovered by a Helios rapid response unit. Standard protocol is cremation within forty-eight hours to prevent forensic analysis."\n\nShe pulls up the intercept.\n\n"Instead they moved him to sub-basement four. Project REVENANT was already in development — he was the proof of concept." She pauses. "They stripped the ethical review board from the project seven months ago."`,
+      safe_here:`She looks at the signal jammer on the door frame.\n\n"For now. This building has six tenants and a landlord who's been in a tax dispute with the city since 2019. No one official has been in this hallway in three years."\n\nA beat.\n\n"I've been underground for six months. I know how to stay invisible."`,
+      if_fail:`"The feeds go dark. Helios runs a counter-narrative for sixty days — fake analysis, bought journalists, coordinated denial. In ninety days, Sector 9 is back under prior operating conditions."\n\nShe doesn't look up.\n\n"And REVENANT becomes the template. Every operative they lose gets rebuilt. Better. Faster. Without the inconvenience of choosing."`,
+      about_mara:`She's quiet for long enough that you start to think she won't answer.\n\n"I spent four years inside Helios building exactly what they used to run the trial. Infrastructure. Data pipelines. Consent frameworks that were never meant to be used." She turns the coffee press in her hands. "I built the architecture of the study that victimised my own sector."\n\nA beat.\n\n"That's why I copied everything. And that's why I can't stop now."`,
+      brother:`She stops typing entirely.\n\n"Kael. He's — he was in the trial data. Monitoring cohort. Sub-group C." Her voice stays level with visible effort. "I found his file six weeks ago. I haven't been able to contact him."\n\n"If the data gets enough traction — if the right advocates get it in front of the right bodies — there's a compensation mechanism in the Helios charter. It's meant to be inaccessible. It's not."\n\nShe looks at you.\n\n"That's what all of this is actually for."`,
+      holding_up:`"I'm —" She stops. Starts again. "I haven't slept in thirty-one hours. I've had more coffee than is probably advisable. I'm running on the specific kind of tired that makes everything feel very clear."\n\nShe looks at you.\n\n"Ask me again when this is over. I think my answer might be different."`,
+      glad_called:`For a moment she doesn't say anything.\n\nThen: "I didn't know if you'd come. After everything on the bridge. After — what was said."\n\nShe turns back to the screens. Her reflection looks less guarded than she does.\n\n"I'm glad you did."`,
+      after_this:`"I've been thinking about that." She doesn't sound like someone who's been thinking about it idly. "There's a journalist network in the upper sectors. They're running the story — and they need someone who can authenticate the source data."\n\nShe pauses.\n\n"They offered me a position. Above ground. With a window." She almost smiles. "I told them I'd let them know."`,
+      come_with:`She goes very still.\n\nThen she turns, fully, and looks at you.\n\n"That's — " She stops. Processes. Starts again. "I've been underground for six months trying not to think about whether there's a reason to go back up."\n\nA long pause.\n\n"Ask me again after the Spire," she says. Her voice is different. "And make sure you come back down."`,
+    },
+  },
+};
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  UNDERPASS 2 — STATE                                 ║
+// ╚══════════════════════════════════════════════════════╝
+
+let S = {
+  name:"", hp:35, maxHp:35, atk:6, def:2,
+  gold:0, xp:0, level:1,
+  inventory:[], equippedWeapon:null, equippedArmor:null,
+  flags:{}, node:"start",
+  tempAtk:0, tempAtkTurns:0,
+  dodgeActive:false, dodgeTurns:0,
+  kills:0, hunger:5, warmth:5,
+  statusEffects:[],
+  npcRel:{mara:0},
+  missionLog:[], killLog:[], notes:[],
+  asciiCache:{},
+  fromU1:false,
+};
+
+let C = {active:false,enemy:null,enemyHp:0,nextNode:null,turn:0,combo:0,enemyEffects:[],enemyKey:""};
+let SCAV = {active:false,depth:0,event:null};
+let NPC_CTX = {key:"",returnNode:""};
+
+function d(n){return Math.floor(Math.random()*n)+1;}
+
+// ─── LEVEL UP ─────────────────────────────────────────────────────────────────
+function checkLevelUp(){
+  const thresholds=[100,250,450,700,1000,1400,1900];
+  const newLevel=thresholds.filter(t=>S.xp>=t).length+1;
+  if(newLevel>S.level){
+    S.level=newLevel; S.maxHp+=8; S.hp=Math.min(S.hp+8,S.maxHp); S.atk+=1;
+    notify('LEVEL UP — Lvl '+S.level,'level');
+  }
+}
+
+function addItem(id){
+  S.inventory.push(id);
+  const it=GAME.ITEMS[id]; if(!it) return;
+  if(it.type==='weapon'&&!S.equippedWeapon){
+    S.equippedWeapon=id; S.atk+=it.attack;
+  } else if(it.type==='armor'&&!S.equippedArmor){
+    S.equippedArmor=id; S.def+=it.defense;
+  }
+}
+
+function removeItem(id){const i=S.inventory.indexOf(id); if(i!==-1)S.inventory.splice(i,1);}
+
+function useItem(id){
+  const it=GAME.ITEMS[id]; if(!it||it.type==='key') return;
+  if(it.type==='weapon'){
+    const cur=S.equippedWeapon&&GAME.ITEMS[S.equippedWeapon];
+    if(cur){S.atk-=cur.attack; S.inventory=S.inventory.filter(x=>x!==S.equippedWeapon);}
+    S.equippedWeapon=id; S.atk+=it.attack; notify('Equipped '+it.name);
+    updateStats(); updateInv(); return;
+  }
+  if(it.type==='armor'){
+    const cur=S.equippedArmor&&GAME.ITEMS[S.equippedArmor];
+    if(cur){S.def-=cur.defense; S.inventory=S.inventory.filter(x=>x!==S.equippedArmor);}
+    S.equippedArmor=id; S.def+=it.defense; notify('Equipped '+it.name);
+    updateStats(); updateInv(); return;
+  }
+  removeItem(id);
+  if(it.heal){S.hp=Math.min(S.hp+it.heal,S.maxHp); notify('+'+it.heal+' HP');}
+  if(it.tempAtk){S.tempAtk+=it.tempAtk; S.tempAtkTurns+=(it.tempTurns||3); notify('ATK +'+it.tempAtk+' active');}
+  if(it.dodge){S.dodgeActive=true; S.dodgeTurns=it.dodgeTurns||2; notify('Ghost mode active');}
+  if(it.recoil){S.hp=Math.max(1,S.hp-it.recoil); notify('Overclock recoil: -'+it.recoil+' HP','warn');}
+  updateStats(); updateInv();
+}
+
+function modNeed(need,delta){
+  if(need==='hunger'){S.hunger=Math.max(0,Math.min(5,S.hunger+delta)); if(S.hunger===0&&delta<0){S.hp=Math.max(0,S.hp-3); notify('Starving — -3 HP','danger');}}
+  else if(need==='warmth'){S.warmth=Math.max(0,Math.min(5,S.warmth+delta)); if(S.warmth===0&&delta<0){S.def=Math.max(0,S.def-1); notify('Too cold — DEF reduced','warn');}}
+}
+
+function addStatusEffect(name,turns,dmgPerTurn){
+  const ex=S.statusEffects.find(e=>e.name===name);
+  if(ex) ex.turns=Math.max(ex.turns,turns);
+  else S.statusEffects.push({name,turns,dmgPerTurn:dmgPerTurn||0});
+}
+
+function tickStatusEffects(){
+  S.statusEffects=S.statusEffects.map(e=>{
+    if(e.dmgPerTurn){S.hp=Math.max(0,S.hp-e.dmgPerTurn); notify(e.name+' damage: -'+e.dmgPerTurn+' HP','danger');}
+    return {...e,turns:e.turns-1};
+  }).filter(e=>e.turns>0);
+}
+
+// ─── UI ────────────────────────────────────────────────────────────────────────
+function updateStats(){
+  const pp=(S.hp/S.maxHp)*100;
+  document.getElementById('hp-fill').style.width=pp+'%';
+  document.getElementById('hp-fill').style.background=pp>50?'var(--g)':pp>25?'var(--amb)':'var(--red)';
+  document.getElementById('hp-val').textContent=S.hp+'/'+S.maxHp;
+  document.getElementById('atk-val').textContent=S.atk+(S.tempAtk?'+'+S.tempAtk:'');
+  document.getElementById('def-val').textContent=S.def;
+  document.getElementById('lvl-val').textContent=S.level;
+  document.getElementById('xp-val').textContent=S.xp;
+  document.getElementById('gold-val').textContent=S.gold;
+  document.getElementById('kills-val').textContent=S.kills;
+}
+
+function updateInv(){
+  const div=document.getElementById('inv-items');
+  div.innerHTML='';
+  S.inventory.forEach(id=>{
+    const it=GAME.ITEMS[id]; if(!it) return;
+    const el=document.createElement('span');
+    el.className='inv-item'+(id===S.equippedWeapon||id===S.equippedArmor?' equipped':'');
+    el.textContent=it.icon+' '+it.name;
+    el.onclick=()=>useItem(id);
+    div.appendChild(el);
+  });
+}
+
+function updateNeeds(){
+  ['hunger','warmth'].forEach(n=>{
+    const pips=document.getElementById(n+'-pips');
+    pips.innerHTML='';
+    for(let i=0;i<5;i++){
+      const p=document.createElement('div');
+      p.className='need-pip'+(i<S[n]?' lit':'');
+      pips.appendChild(p);
+    }
+  });
+  updateMaraHearts();
+}
+
+function updateMaraHearts(){
+  const pips=document.getElementById('mara-pips');
+  if(!pips) return;
+  pips.innerHTML='';
+  for(let i=0;i<5;i++){
+    const p=document.createElement('div');
+    p.className='heart-pip'+(i<(S.npcRel.mara||0)?' lit':'');
+    p.textContent='♥';
+    pips.appendChild(p);
+  }
+}
+
+function updateStatusTags(){
+  const div=document.getElementById('status-tags');
+  div.innerHTML='';
+  S.statusEffects.forEach(e=>{
+    const el=document.createElement('span');
+    el.className='inv-item';
+    el.style.borderColor='var(--red)';
+    el.style.color='var(--red)';
+    el.textContent=e.name.toUpperCase()+' ('+e.turns+')';
+    div.appendChild(el);
+  });
+}
+
+let scenePanelVisible=true;
+function toggleScenePanel(){
+  scenePanelVisible=!scenePanelVisible;
+  document.getElementById('scene-panel').style.maxHeight=scenePanelVisible?'155px':'28px';
+  document.getElementById('ascii-toggle').textContent=scenePanelVisible?'[hide]':'[show]';
+}
+
+// ─── MAP ──────────────────────────────────────────────────────────────────────
+let currentScreen='title-screen';
+
+function openMap(){
+  const body=document.getElementById('map-body'); body.innerHTML='';
+  GAME.MAP_ZONES.forEach(zone=>{
+    const zd=document.createElement('div'); zd.className='map-zone';
+    const zn=document.createElement('div'); zn.className='map-zone-name'; zn.textContent=zone.name;
+    zd.appendChild(zn);
+    zone.nodes.forEach(nid=>{
+      const el=document.createElement('div'); el.className='map-node';
+      if(S.node===nid) el.classList.add('current');
+      else if(S.flags['visited_'+nid]) el.classList.add('visited');
+      el.textContent=GAME.NODE_NAMES[nid]||nid.replace(/_/g,' ');
+      zd.appendChild(el);
+    });
+    body.appendChild(zd);
+  });
+  const prev=document.getElementById(currentScreen);
+  const next=document.getElementById('map-screen');
+  if(prev) prev.classList.add('hidden');
+  next.classList.remove('hidden');
+}
+
+function closeMap(){
+  document.getElementById('map-screen').classList.add('hidden');
+  document.getElementById(currentScreen).classList.remove('hidden');
+}
+
+// ─── LOG ──────────────────────────────────────────────────────────────────────
+let activeLogTab='story';
+function openLog(){
+  switchLogTab(activeLogTab);
+  const prev=document.getElementById(currentScreen);
+  const next=document.getElementById('log-screen');
+  if(prev) prev.classList.add('hidden');
+  next.classList.remove('hidden');
+}
+
+function closeLog(){
+  document.getElementById('log-screen').classList.add('hidden');
+  document.getElementById(currentScreen).classList.remove('hidden');
+}
+
+function switchLogTab(tab){
+  activeLogTab=tab;
+  document.querySelectorAll('.log-tab').forEach(t=>t.classList.remove('active'));
+  const tabs={'story':'STORY','kills':'KILLS','notes':'INTEL'};
+  document.querySelectorAll('.log-tab').forEach(t=>{if(t.textContent===tabs[tab])t.classList.add('active');});
+  const body=document.getElementById('log-body'); body.innerHTML='';
+  if(tab==='story'){
+    [...S.missionLog].reverse().forEach(e=>{
+      const d=document.createElement('div'); d.className='log-entry';
+      d.innerHTML='<div class="log-entry-head">'+e.head+'</div><div class="log-entry-body">'+e.text+'</div>';
+      body.appendChild(d);
+    });
+  } else if(tab==='kills'){
+    [...S.killLog].reverse().forEach(e=>{
+      const d=document.createElement('div'); d.className='log-entry';
+      d.innerHTML='<div class="log-entry-head">'+e.name+'</div><div class="log-entry-body">'+e.desc+'</div>';
+      body.appendChild(d);
+    });
+  } else {
+    [...S.notes].reverse().forEach(e=>{
+      const d=document.createElement('div'); d.className='log-entry';
+      d.innerHTML='<div class="log-entry-head">INTEL</div><div class="log-entry-body">'+e+'</div>';
+      body.appendChild(d);
+    });
+  }
+}
+
+// ─── SCREEN SYSTEM ────────────────────────────────────────────────────────────
+function showScreen(id){
+  if(currentScreen===id) return;
+  const prev=document.getElementById(currentScreen);
+  const next=document.getElementById(id);
+  if(!next) return;
+  if(prev&&!prev.classList.contains('hidden')){
+    prev.classList.add('screen-leave');
+    setTimeout(()=>{
+      prev.classList.add('hidden'); prev.classList.remove('screen-leave');
+      next.classList.remove('hidden'); next.classList.add('screen-enter');
+      setTimeout(()=>next.classList.remove('screen-enter'),350);
+    },160);
+  } else {
+    document.querySelectorAll('.screen').forEach(s=>{s.classList.add('hidden'); s.classList.remove('screen-leave','screen-enter');});
+    next.classList.remove('hidden'); next.classList.add('screen-enter');
+    setTimeout(()=>next.classList.remove('screen-enter'),350);
+  }
+  currentScreen=id;
+}
+
+let notifTimer;
+function notify(msg,type){
+  const el=document.getElementById('notif');
+  el.textContent='// '+msg;
+  el.className='show'+(type?' notif-'+type:'');
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>{el.className='';},2400);
+}
+
+// ─── TYPEWRITER ───────────────────────────────────────────────────────────────
+let twTimer=null;
+function typeText(text,el,speed,cb){
+  clearTimeout(twTimer);
+  el.textContent='';
+  let i=0;
+  function tick(){
+    el.textContent=text.slice(0,i++);
+    el.parentElement.scrollTop=el.parentElement.scrollHeight;
+    if(i<=text.length) twTimer=setTimeout(tick,speed); else if(cb) cb();
+  }
+  tick();
+}
+
+// ─── RENDER NODE ──────────────────────────────────────────────────────────────
+async function renderNode(nodeId){
+  clearTimeout(twTimer);
+  const node=GAME.STORY[nodeId];
+  if(!node){console.error('Missing node:',nodeId); return;}
+
+  S.node=nodeId;
+  S.flags['visited_'+nodeId]=true;
+
+  if(node.items) node.items.forEach(addItem);
+  if(node.gold){S.gold+=node.gold; if(node.gold>0) notify('+ ¢'+node.gold);}
+  if(node.flag) S.flags[node.flag]=true;
+
+  document.getElementById('scene-title').textContent=node.title||'// ---';
+
+  // ASCII
+  const artEl=document.getElementById('ascii-art');
+  artEl.className='';
+  const asciiKey=node.ascii||nodeId;
+  if(S.asciiCache[asciiKey]){
+    artEl.textContent=S.asciiCache[asciiKey];
+  } else if(GAME.ASCII_FB[asciiKey]){
+    artEl.textContent=GAME.ASCII_FB[asciiKey];
+    tryFetchAscii(asciiKey, artEl);
+  } else {
+    artEl.textContent=GAME.ASCII_FB.default;
+  }
+
+  // Log
+  if(node.text){
+    const snippet=node.text.replace(/\n/g,' ').substring(0,80);
+    S.missionLog.push({head:node.title||nodeId, text:snippet+'...'});
+    if(S.missionLog.length>40) S.missionLog.shift();
+  }
+
+  updateStats(); updateInv(); updateNeeds(); updateStatusTags();
+  if(S.npcRel.mara>=1) document.getElementById('mara-hearts-need').style.display='flex';
+
+  // Modulate needs on travel
+  if(Math.random()<0.35) modNeed('hunger',-1);
+  if(Math.random()<0.2)  modNeed('warmth',-1);
+
+  // Text
+  const textOut=document.getElementById('text-out');
+  const choices=document.getElementById('choices');
+  choices.innerHTML='';
+
+  if(node.scavenge){
+    typeText(node.text||'',textOut,12,()=>openScavenge(node));
+    return;
+  }
+
+  typeText(node.text||'',textOut,12,()=>{
+    const ch=node.choices||[];
+    ch.forEach(choice=>{
+      if(choice.requires&&!S.inventory.includes(choice.requires)) return;
+      if(choice.flag&&S.flags[choice.flag]&&!choice.repeatable) return;
+      const btn=document.createElement('button');
+      btn.className=choice.npc?'btn cyan':'btn';
+      btn.textContent='> '+choice.text;
+      btn.onclick=()=>handleChoice(choice);
+      choices.appendChild(btn);
+    });
+    if(node.victory) setTimeout(()=>endVictory(node.text||''),800);
+  });
+}
+
+function handleChoice(ch){
+  if(ch.flag) S.flags[ch.flag]=true;
+  if(ch.shop){openShop(); return;}
+  if(ch.npc){openNPC(ch.npc,S.node); return;}
+  if(ch.combat){startCombat(ch.combat, ch.next||S.node); return;}
+  if(ch.next) renderNode(ch.next);
+}
+
+// ─── ASCII FETCH ──────────────────────────────────────────────────────────────
+async function tryFetchAscii(key, el){
+}
+
+// ─── NPC ──────────────────────────────────────────────────────────────────────
+function openNPC(key, returnNode){
+  const npc=GAME.NPCS[key]; if(!npc) return;
+  NPC_CTX={key,returnNode};
+  const rel=S.npcRel[key]||0;
+  const inner=document.getElementById('npc-inner');
+  const isRomance=key==='mara'&&rel>=4;
+  inner.classList.toggle('romance-mode',isRomance);
+
+  let portraitKey=0;
+  Object.keys(npc.portraits).forEach(k=>{if(rel>=parseInt(k))portraitKey=parseInt(k);});
+  document.getElementById('npc-portrait').textContent=npc.portraits[portraitKey]||'';
+  document.getElementById('npc-hdr-title').textContent='// '+npc.name.toUpperCase()+' //';
+  document.getElementById('npc-name-display').textContent=npc.name;
+
+  const maraLabels=['stranger','acquaintance','trusted','ally','drawn to','something real'];
+  const relLabels=['stranger','acquaintance','trusted','allied','close','intimate'];
+  const labels=key==='mara'?maraLabels:relLabels;
+  document.getElementById('npc-rel').textContent='REL: '+(labels[Math.min(rel,labels.length-1)]||'unknown');
+
+  let greetKey=0;
+  Object.keys(npc.greetings).forEach(k=>{if(rel>=parseInt(k))greetKey=parseInt(k);});
+  document.getElementById('npc-body').textContent=npc.greetings[greetKey]||'';
+
+  renderNPCChoices(npc, rel);
+  showScreen('npc-screen');
+}
+
+function renderNPCChoices(npc, rel){
+  let optKey=0;
+  Object.keys(npc.options).forEach(k=>{if(rel>=parseInt(k))optKey=parseInt(k);});
+  const opts=npc.options[optKey]||[];
+  const choicesDiv=document.getElementById('npc-choices'); choicesDiv.innerHTML='';
+  opts.forEach(opt=>{
+    if(opt.flag&&S.flags[opt.flag]&&!opt.repeatable) return;
+    const cls=opt.romance?'btn pink':'btn';
+    const b=document.createElement('button'); b.className=cls; b.textContent='> '+opt.text;
+    b.onclick=()=>handleNPCOption(opt); choicesDiv.appendChild(b);
+  });
+}
+
+function handleNPCOption(opt){
+  const npc=GAME.NPCS[NPC_CTX.key];
+  if(opt.rel){
+    S.npcRel[NPC_CTX.key]=Math.min(5,(S.npcRel[NPC_CTX.key]||0)+opt.rel);
+    if(NPC_CTX.key==='mara'&&S.npcRel.mara>=1){
+      document.getElementById('mara-hearts-need').style.display='flex';
+      updateMaraHearts();
+    }
+  }
+  if(opt.flag) S.flags[opt.flag]=true;
+  if(opt.dialogue&&npc.dialogues[opt.dialogue]){
+    document.getElementById('npc-body').textContent=npc.dialogues[opt.dialogue];
+    if(opt.flag==='come_with') notify('Mara will come with you.','romance');
+    if(opt.romance&&S.npcRel[NPC_CTX.key]>=4){
+      document.getElementById('npc-inner').classList.add('romance-mode');
+    }
+    // Re-render choices with updated rel
+    renderNPCChoices(npc, S.npcRel[NPC_CTX.key]||0);
+  }
+  if(opt.close){closeNPC(); if(opt.next) renderNode(opt.next);}
+  else if(opt.next){closeNPC(); renderNode(opt.next);}
+}
+
+function closeNPC(){showScreen('game-screen');}
+
+// ─── SHOP ─────────────────────────────────────────────────────────────────────
+function openShop(){
+  document.getElementById('shop-gold').textContent='¢ '+S.gold;
+  const list=document.getElementById('shop-list'); list.innerHTML='';
+  GAME.SHOP_STOCK.forEach(stock=>{
+    const it=GAME.ITEMS[stock.id]; if(!it) return;
+    const div=document.createElement('div'); div.className='shop-item';
+    const canAfford=S.gold>=stock.cost;
+    div.innerHTML=`<div class="shop-item-info"><div class="shop-item-name">${it.icon} ${it.name}</div><div class="shop-item-desc">${it.desc}</div></div>`;
+    const btn=document.createElement('button');
+    btn.className='btn btn-sm amber';
+    btn.textContent='[ ¢'+stock.cost+' ]';
+    btn.disabled=!canAfford;
+    btn.onclick=()=>{
+      if(S.gold<stock.cost){notify('Insufficient funds','danger'); return;}
+      S.gold-=stock.cost;
+      addItem(stock.id);
+      notify('Purchased: '+it.name);
+      updateStats(); updateInv();
+      document.getElementById('shop-gold').textContent='¢ '+S.gold;
+    };
+    div.appendChild(btn);
+    list.appendChild(div);
+  });
+  showScreen('shop-screen');
+}
+
+function closeShop(){showScreen('game-screen'); if(NPC_CTX.returnNode) renderNode(NPC_CTX.returnNode);}
+
+// ─── SCAVENGE ─────────────────────────────────────────────────────────────────
+function openScavenge(node){
+  SCAV.active=true; SCAV.depth=0;
+  document.getElementById('scav-title').textContent='// SCAVENGE //';
+  document.getElementById('scav-depth-lbl').textContent='';
+  runScavEvent(node);
+  showScreen('scav-screen');
+}
+
+function runScavEvent(returnNode){
+  const ev=GAME.SCAV_EVENTS[Math.floor(Math.random()*GAME.SCAV_EVENTS.length)];
+  SCAV.event=ev;
+  document.getElementById('scav-body').textContent=ev.text;
+  document.getElementById('scav-depth-lbl').textContent='DEPTH: '+(SCAV.depth+1);
+  const choices=document.getElementById('scav-choices'); choices.innerHTML='';
+
+  if(ev.items) ev.items.forEach(addItem);
+  if(ev.gold&&ev.gold>0){S.gold+=ev.gold; notify('+ ¢'+ev.gold);}
+  updateStats(); updateInv();
+
+  if(SCAV.depth<3){
+    const deeper=document.createElement('button'); deeper.className='btn';
+    deeper.textContent='> Go deeper'; deeper.onclick=()=>{SCAV.depth++; modNeed('hunger',-1); runScavEvent(returnNode);};
+    choices.appendChild(deeper);
+  }
+  const extract=document.createElement('button'); extract.className='btn primary';
+  extract.textContent='> Extract'; extract.onclick=()=>closeScavenge(returnNode);
+  choices.appendChild(extract);
+}
+
+function closeScavenge(returnNode){
+  SCAV.active=false; SCAV.depth=0;
+  showScreen('game-screen');
+  if(returnNode&&GAME.STORY[returnNode]){
+    const node=GAME.STORY[returnNode];
+    const choices=document.getElementById('choices'); choices.innerHTML='';
+    (node.choices||[]).forEach(choice=>{
+      const btn=document.createElement('button'); btn.className='btn'; btn.textContent='> '+choice.text;
+      btn.onclick=()=>handleChoice(choice); choices.appendChild(btn);
+    });
+  }
+}
+
+// ─── COMBAT ───────────────────────────────────────────────────────────────────
+function startCombat(enemyKey, nextNode){
+  const enemy=GAME.ENEMIES[enemyKey]; if(!enemy) return;
+  C={active:true,enemy:{...enemy},enemyHp:enemy.hp,nextNode,turn:0,combo:0,enemyEffects:[],enemyKey};
+  document.getElementById('c-ascii').textContent=GAME.COMBAT_ASCII[enemyKey]||'';
+  updateCombatUI();
+  document.getElementById('c-log').innerHTML='';
+  cLog('// COMBAT INITIATED — '+enemy.name.toUpperCase()+' //');
+  showScreen('combat-screen');
+}
+
+function updateCombatUI(){
+  const e=C.enemy;
+  document.getElementById('c-p-name').textContent=S.name||'OPERATIVE';
+  document.getElementById('c-p-stats').textContent='ATK '+(S.atk+(S.tempAtk||0))+' · DEF '+S.def;
+  const pp=(S.hp/S.maxHp)*100;
+  document.getElementById('c-p-hp').style.width=pp+'%';
+  document.getElementById('c-p-hp').style.background=pp>50?'var(--g)':pp>25?'var(--amb)':'var(--red)';
+
+  document.getElementById('c-e-name').textContent=e.name;
+  document.getElementById('c-e-stats').textContent='HP '+C.enemyHp+' / '+e.maxHp+(e.augmented?' [AUG]':'');
+  document.getElementById('c-e-hp').style.width=((C.enemyHp/e.maxHp)*100)+'%';
+
+  const pips=document.getElementById('combo-pips'); pips.innerHTML='';
+  for(let i=0;i<5;i++){const p=document.createElement('div'); p.className='combo-pip'+(i<C.combo?' lit':''); pips.appendChild(p);}
+}
+
+function cLog(msg){
+  const log=document.getElementById('c-log');
+  const line=document.createElement('div'); line.textContent=msg; log.appendChild(line);
+  log.scrollTop=log.scrollHeight;
+}
+
+function flash(type){
+  const el=document.getElementById('combat-flash');
+  el.className='flash-'+type;
+  setTimeout(()=>{el.className='';},400);
+}
+
+function combatAction(action){
+  if(!C.active) return;
+  C.turn++;
+  const e=C.enemy;
+
+  // Rage mode for bosses
+  if(e.rageThreshold&&C.enemyHp<=e.rageThreshold&&!C.rageActive){
+    C.rageActive=true;
+    e.atk=Math.floor(e.atk*1.35);
+    cLog('// '+e.name.toUpperCase()+' RAGE MODE ACTIVATED //');
+    document.getElementById('c-ascii').style.color='var(--red)';
+  }
+
+  if(action==='strike'){
+    const atk=S.atk+(S.tempAtk||0);
+    let dmg=Math.max(1,atk-e.def+d(4)-2);
+    if(d(10)===10){dmg=Math.floor(dmg*1.8); cLog('CRITICAL HIT!'); flash('crit');} else flash('hit');
+    C.enemyHp=Math.max(0,C.enemyHp-dmg);
+    C.combo=Math.min(5,C.combo+1);
+    cLog('You strike for '+dmg+' damage. Enemy HP: '+C.enemyHp+'/'+e.maxHp);
+  } else if(action==='heavy'){
+    const atk=S.atk+(S.tempAtk||0);
+    let dmg=Math.max(2,Math.floor((atk-e.def)*1.6)+d(5));
+    C.enemyHp=Math.max(0,C.enemyHp-dmg);
+    C.combo=0;
+    flash('crit');
+    cLog('Heavy blow: '+dmg+' damage. Enemy HP: '+C.enemyHp+'/'+e.maxHp);
+  } else if(action==='dodge'){
+    S.dodgeActive=true; S.dodgeTurns=1;
+    cLog('Dodge stance — next hit has 50% evade chance.');
+    C.combo=0;
+  } else if(action==='item'){
+    const usable=S.inventory.filter(id=>{const it=GAME.ITEMS[id]; return it&&it.type==='consumable';});
+    if(!usable.length){cLog('No usable items.'); return;}
+    useItem(usable[0]);
+    cLog('Used '+GAME.ITEMS[usable[0]].name+'.');
+  }
+
+  // Temp ATK tick
+  if(S.tempAtkTurns>0){S.tempAtkTurns--; if(S.tempAtkTurns===0){S.tempAtk=0; notify('ATK boost expired','warn');}}
+
+  if(C.enemyHp<=0){
+    S.xp+=e.xp; S.gold+=e.gold; S.kills++;
+    S.killLog.push({name:e.name, desc:e.desc+' — XP: +'+e.xp+', Gold: +'+e.gold});
+    checkLevelUp();
+    cLog('// '+e.name.toUpperCase()+' DEFEATED — +'+e.xp+' XP, +¢'+e.gold+' //');
+    C.active=false;
+    updateCombatUI(); updateStats();
+    setTimeout(()=>{showScreen('game-screen'); renderNode(C.nextNode||S.node);},800);
+    return;
+  }
+
+  // Enemy turn
+  setTimeout(()=>{
+    let eDmg=Math.max(1,e.atk-S.def+d(4)-2);
+    if(S.dodgeActive&&Math.random()<0.5){
+      cLog(e.name+' attacks — you evade!');
+      S.dodgeActive=false; S.dodgeTurns=0;
+    } else {
+      S.dodgeActive=false;
+      S.hp=Math.max(0,S.hp-eDmg);
+      cLog(e.name+' attacks for '+eDmg+' damage. Your HP: '+S.hp+'/'+S.maxHp);
+      flash('damage');
+    }
+    tickStatusEffects();
+    updateCombatUI(); updateStats();
+    if(S.hp<=0){
+      C.active=false;
+      cLog('// OPERATIVE DOWN //');
+      setTimeout(()=>endGameOver(),700);
+    }
+  },400);
+
+  updateCombatUI(); updateStats();
+}
+
+// ─── END STATES ───────────────────────────────────────────────────────────────
+function endGameOver(){
+  const msgs=[
+    `The city takes everything eventually.\n\nHP:  0 / ${S.maxHp}\nGold: ${S.gold}\nLevel: ${S.level}\nKills: ${S.kills}`,
+    `NAKAMURA-Ω stands over you.\n\nHe doesn't look victorious.\nHe looks like something that has run out of options.\n\nMaybe you both did.`,
+    `The feeds will keep running without you.\nMara will find another way.\nThe sector will remember.\n\nBut you won't be there to see it.`,
+  ];
+  const d2=(n)=>Math.floor(Math.random()*n);
+  document.getElementById('go-text').textContent=msgs[d2(msgs.length)];
+  document.getElementById('go-ascii').textContent=`    ████████████████████████████\n    █   H P :  [ 0 0 0 ]      █\n    █   F L A T L I N E D     █\n    ████████████████████████████`;
+  showScreen('gameover-screen');
+}
+
+function endVictory(text){
+  let endText=`Nakamura-Ω is offline.\n\nYou stand on the roof of the Helios Spire in the rain. Forty floors up. The sector spread out below you — lights and noise and six million people who are starting to understand what was done to them.\n\nThe data is still transmitting. Somewhere, a journalist is reading a file with your sector's name on it. Somewhere, a lawyer is making a call.\n\nIt's not enough. It's never enough.\n\nBut it's something.`;
+
+  if(S.npcRel.mara>=4&&S.flags['come_with']){
+    endText+=`\n\n───\n\nYour terminal buzzes.\n\n"I'm at the extraction point."\n\nA pause.\n\n"I brought the coffee press."\n\nAnother pause. Shorter this time.\n\n"Come find me."`;
+  } else if(S.npcRel.mara>=4){
+    endText+=`\n\n───\n\nYour terminal buzzes. No sender ID.\n\n"You came back."\n\nA pause longer than it needs to be.\n\n"I knew you would. I just needed to hear it."\n\nAnother pause.\n\n"The journalist network has a safe location. Above ground. Morning light."\n\n"I'll send coordinates when you're clear."`;
+  } else if(S.npcRel.mara>=2){
+    endText+=`\n\n───\n\nYour terminal buzzes.\n\n"Data is holding. Forty-two active feeds now."\n\nA pause.\n\n"Thank you for coming back."`;
+  }
+
+  if(S.fromU1){
+    endText+=`\n\n───\n\n[ UNDERPASS 1 VETERAN — legacy operative record updated ]`;
+  }
+
+  document.getElementById('vic-text').textContent=endText;
+  document.getElementById('vic-stats').textContent='— '+S.name+' — Lvl '+S.level+' — ¢'+S.gold+' — '+S.xp+'xp — '+S.kills+' kills —';
+  document.getElementById('vic-ascii').textContent=`    ╔══════════════════════════╗\n    ║   S E Q U E N C E  2     ║\n    ║   E X T R A C T E D     ║\n    ║   DATA LIVE · 42 FEEDS  ║\n    ╚══════════════════════════╝`;
+  showScreen('victory-screen');
+}
+
+// ─── RESTART ──────────────────────────────────────────────────────────────────
+function restartGame(){
+  const name=S.name;
+  S={name,hp:35,maxHp:35,atk:6,def:2,gold:0,xp:0,level:1,inventory:[],equippedWeapon:null,equippedArmor:null,flags:{},node:'start',tempAtk:0,tempAtkTurns:0,dodgeActive:false,dodgeTurns:0,kills:0,hunger:5,warmth:5,statusEffects:[],npcRel:{mara:0},missionLog:[],killLog:[],notes:[],asciiCache:{},fromU1:false};
+  C={active:false,enemy:null,enemyHp:0,nextNode:null,turn:0,combo:0,enemyEffects:[],enemyKey:""};
+  document.getElementById('hdr-name').textContent='[ '+name.toUpperCase()+' ]';
+  document.getElementById('mara-hearts-need').style.display='none';
+  document.body.classList.add('in-game');
+  showScreen('game-screen'); updateStats(); updateInv(); updateNeeds(); updateStatusTags();
+  renderNode('start');
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  SAVE SYSTEM                                         ║
+// ╚══════════════════════════════════════════════════════╝
+
+const SAVE_VERSION = 1;
+const SLOT_PREFIX  = 'underpass2_save_';
+const INDEX_KEY    = 'underpass2_saves_index';
+
+const STATE_DEFAULTS = {
+  name:'',hp:35,maxHp:35,atk:6,def:2,
+  gold:0,xp:0,level:1,inventory:[],equippedWeapon:null,equippedArmor:null,
+  flags:{},node:'start',tempAtk:0,tempAtkTurns:0,dodgeActive:false,dodgeTurns:0,
+  kills:0,hunger:5,warmth:5,statusEffects:[],npcRel:{mara:0},
+  missionLog:[],killLog:[],notes:[],asciiCache:{},fromU1:false,
+};
+
+function nameToKey(name){return SLOT_PREFIX+name.trim().toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,24);}
+function getIndex(){try{return JSON.parse(localStorage.getItem(INDEX_KEY)||'[]');}catch(_){return [];}}
+function addToIndex(k){const i=getIndex(); if(!i.includes(k)){i.push(k); localStorage.setItem(INDEX_KEY,JSON.stringify(i));}}
+function removeFromIndex(k){localStorage.setItem(INDEX_KEY,JSON.stringify(getIndex().filter(x=>x!==k)));}
+
+function migrateSave(raw){
+  const m=Object.assign({},STATE_DEFAULTS,raw);
+  m.flags=(raw.flags&&typeof raw.flags==='object')?raw.flags:{};
+  m.npcRel=Object.assign({mara:0},raw.npcRel||{});
+  m.inventory=Array.isArray(raw.inventory)?raw.inventory:[];
+  m.statusEffects=Array.isArray(raw.statusEffects)?raw.statusEffects:[];
+  m.missionLog=Array.isArray(raw.missionLog)?raw.missionLog:[];
+  m.killLog=Array.isArray(raw.killLog)?raw.killLog:[];
+  m.notes=Array.isArray(raw.notes)?raw.notes:[];
+  m.asciiCache={};
+  delete m._saveVer; delete m._savedAt; delete m._slotKey;
+  return m;
+}
+
+function saveGame(){
+  if(!S.name){notify('No operative to save.','danger'); return;}
+  try{
+    const k=nameToKey(S.name);
+    const payload=Object.assign({},S,{_saveVer:SAVE_VERSION,_savedAt:Date.now(),_slotKey:k});
+    localStorage.setItem(k,JSON.stringify(payload));
+    addToIndex(k);
+    notify('Saved: '+S.name);
+  }catch(e){notify('Save failed.','danger');}
+}
+
+function loadSave(k){
+  try{
+    const raw=JSON.parse(localStorage.getItem(k)||'{}');
+    Object.assign(S,migrateSave(raw));
+    document.getElementById('hdr-name').textContent='[ '+S.name.toUpperCase()+' ]';
+    document.body.classList.add('in-game');
+    if(S.npcRel.mara>=1) document.getElementById('mara-hearts-need').style.display='flex';
+    showScreen('game-screen');
+    updateStats(); updateInv(); updateNeeds(); updateStatusTags();
+    renderNode(S.node||'start');
+    notify('Loaded: '+S.name);
+  }catch(e){notify('Load failed.','danger');}
+}
+
+function deleteSave(k){
+  localStorage.removeItem(k);
+  removeFromIndex(k);
+  renderSavesPanel();
+}
+
+// ─── SAVES SCREEN ─────────────────────────────────────────────────────────────
+let savesMode='slots';
+function openSaves(mode){
+  savesMode=mode||'slots';
+  switchSavesTab(savesMode==='load'?'slots':'slots');
+  showScreen('saves-screen');
+}
+
+function closeSaves(){
+  const target=document.body.classList.contains('in-game')?'game-screen':'title-screen';
+  showScreen(target);
+}
+
+function switchSavesTab(tab){
+  document.querySelectorAll('#saves-tabs .log-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('saves-tab-'+tab).classList.add('active');
+  renderSavesPanel(tab);
+}
+
+function renderSavesPanel(tab){
+  tab=tab||'slots';
+  const body=document.getElementById('saves-body'); body.innerHTML='';
+  if(tab==='slots'){
+    const keys=getIndex();
+    if(!keys.length){body.innerHTML='<div style="color:#1a3a1a;font-size:11px;padding:8px;">No saves found.</div>'; return;}
+    keys.forEach(k=>{
+      try{
+        const raw=JSON.parse(localStorage.getItem(k)||'{}');
+        const div=document.createElement('div');
+        div.style.cssText='border:1px solid #1a3a1a;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;';
+        const info=document.createElement('div');
+        const date=raw._savedAt?new Date(raw._savedAt).toLocaleString():'unknown';
+        info.innerHTML=`<div style="font-size:12px;color:var(--g2);letter-spacing:1px;">${raw.name||'???'}</div><div style="font-size:10px;color:#1a3a1a;">Lvl ${raw.level||1} · ¢${raw.gold||0} · ${raw.kills||0} kills${raw.fromU1?' · [U1 VETERAN]':''}</div><div style="font-size:9px;color:#0f2a0f;">${date}</div>`;
+        const btns=document.createElement('div'); btns.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
+        const loadBtn=document.createElement('button'); loadBtn.className='btn btn-sm'; loadBtn.textContent='[ LOAD ]'; loadBtn.onclick=()=>{loadSave(k); closeSaves();};
+        const expBtn=document.createElement('button'); expBtn.className='btn btn-sm cyan'; expBtn.textContent='[ EXPORT ]';
+        expBtn.onclick=()=>{
+          const payload=Object.assign({},JSON.parse(localStorage.getItem(k)||'{}'),{_saveVer:SAVE_VERSION});
+          navigator.clipboard.writeText(JSON.stringify(payload)).then(()=>notify('Copied to clipboard')).catch(()=>notify('Export failed','danger'));
+        };
+        const delBtn=document.createElement('button'); delBtn.className='btn btn-sm danger'; delBtn.textContent='[ DEL ]'; delBtn.onclick=()=>deleteSave(k);
+        btns.appendChild(loadBtn); btns.appendChild(expBtn); btns.appendChild(delBtn);
+        div.appendChild(info); div.appendChild(btns); body.appendChild(div);
+      }catch(e){}
+    });
+    if(S.name){
+      const saveNowBtn=document.createElement('button'); saveNowBtn.className='btn primary'; saveNowBtn.style.cssText='margin-top:8px;width:100%;letter-spacing:2px;';
+      saveNowBtn.textContent='[ SAVE CURRENT GAME ]'; saveNowBtn.onclick=()=>{saveGame(); renderSavesPanel('slots');};
+      body.appendChild(saveNowBtn);
+    }
+  } else {
+    const p=document.createElement('p'); p.style.cssText='font-size:11px;color:#2a5a5a;line-height:1.7;margin-bottom:10px;';
+    p.textContent='Paste an exported save string to load it on this device.';
+    const ta=document.createElement('textarea');
+    ta.style.cssText='width:100%;background:#030808;border:1px solid #1a3a3a;color:var(--cyn);font-family:Share Tech Mono,monospace;font-size:11px;padding:10px;height:100px;resize:none;outline:none;';
+    ta.placeholder='Paste save JSON here...';
+    const btn=document.createElement('button'); btn.className='btn cyan'; btn.style.cssText='margin-top:8px;';
+    btn.textContent='[ LOAD SAVE ]';
+    btn.onclick=()=>{
+      try{
+        const raw=JSON.parse(ta.value.trim());
+        const k=nameToKey(raw.name||'imported');
+        localStorage.setItem(k,JSON.stringify(raw));
+        addToIndex(k);
+        loadSave(k); closeSaves();
+      }catch(e){notify('Invalid save data','danger');}
+    };
+    body.appendChild(p); body.appendChild(ta); body.appendChild(btn);
+  }
+}
+
+// ─── UNDERPASS 1 IMPORT ───────────────────────────────────────────────────────
+function openImportModal(){document.getElementById('import-modal').classList.add('open');}
+function closeImportModal(){document.getElementById('import-modal').classList.remove('open');}
+
+function processU1Import(){
+  const raw=document.getElementById('import-u1-data').value.trim();
+  try{
+    const save=JSON.parse(raw);
+    if(!save.name) throw new Error('No name found');
+
+    // Carry over relevant U1 stats
+    S.name = save.name;
+    S.fromU1 = true;
+    S.npcRel.mara = Math.min(5, save.npcRel?.mara||0);
+    S.kills = save.kills||0;
+
+    // Scale bonuses from U1 level — extra HP, ATK, DEF, gold
+    const u1level = Math.min(7, save.level||1);
+    S.level = 1;
+    S.maxHp = 35 + (u1level * 5);
+    S.hp = S.maxHp;
+    S.atk = 6 + Math.floor(u1level * 0.7);
+    S.def = 2 + Math.floor(u1level * 0.4);
+    S.gold = Math.floor((save.gold||0) * 0.5); // carry half gold
+    S.xp = 0;
+
+    // Carry over key items
+    const carryItems = ['mara_flask','data_shard','combat_blade','body_armor','utility_knife'];
+    carryItems.forEach(id => {
+      if(save.inventory?.includes(id) && GAME.ITEMS[id]) addItem(id);
+    });
+
+    // Mara hearts active from the start if relationship existed
+    if(S.npcRel.mara >= 1) document.getElementById('mara-hearts-need').style.display='flex';
+
+    closeImportModal();
+    showNameScreen(true);
+    notify('U1 save imported — '+S.name+' recognised','level');
+  }catch(e){
+    notify('Invalid save data — check the format','danger');
+  }
+}
+
+// ─── BOOT + TITLE ─────────────────────────────────────────────────────────────
+async function runBoot(){
+  const overlay=document.getElementById('boot-overlay');
+  const textEl=document.getElementById('boot-text');
+  const lines=[
+    'UNDERPASS TERMINAL // v1.0.1',
+    'EmuSoft Sector Systems Division',
+    '─────────────────────────────────────',
+    '',
+    'SEQUENCE 2 INITIALIZING...',
+    '',
+    'Loading operative registry..................OK',
+    'Mounting sector surface grid.................OK',
+    'Syncing data transmission feeds..............OK',
+    'Decrypting Project REVENANT intercept........OK',
+    'Establishing Mara contact protocol...........OK',
+    '  > signal jammer detected..................BYPASS',
+    '  > channel secured.........................OK',
+    '',
+    'UNDERPASS 1 IMPORT HANDLER...................READY',
+    '',
+    'WARNING: HELIOS RESPONSE TIER ELEVATED.',
+    'WARNING: PROJECT REVENANT — PHASE 2 ACTIVE.',
+    '',
+    '> BOOT COMPLETE. EYES OPEN.',
+  ];
+  for(const line of lines){textEl.textContent+=line+'\n'; await sleep(45+Math.random()*50);}
+  await sleep(500);
+  overlay.style.animation='bootFadeOut .55s ease forwards';
+  await sleep(560);
+  overlay.style.display='none';
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function showNameScreen(fromImport){
+  if(fromImport&&S.name){
+    document.getElementById('name-input').value=S.name;
+  }
+  showScreen('name-screen');
+  setTimeout(()=>document.getElementById('name-input').focus(),350);
+}
+
+function showContinue(){
+  const keys=getIndex();
+  if(!keys.length){notify('No saves found','warn'); return;}
+  openSaves('load');
+}
+
+function startGame(){
+  const nameVal=document.getElementById('name-input').value.trim().toUpperCase();
+  if(!nameVal){notify('Name required','danger'); return;}
+  if(!S.fromU1){
+    S.name=nameVal;
+  } else {
+    S.name=nameVal;
+  }
+  document.getElementById('hdr-name').textContent='[ '+S.name+' ]';
+  document.body.classList.add('in-game');
+  showScreen('game-screen');
+  updateStats(); updateInv(); updateNeeds(); updateStatusTags();
+  renderNode('start');
+  if(S.fromU1) setTimeout(()=>notify('Welcome back, '+S.name+'. Sector 9 remembers.','level'),600);
+}
+
+// ─── PATCH NOTES ──────────────────────────────────────────────────────────────
+function openPatchNotes(){showScreen('patch-screen');}
+function closePatchNotes(){
+  showScreen(document.body.classList.contains('in-game')?'game-screen':'title-screen');
+}
+
+// ─── RAIN ─────────────────────────────────────────────────────────────────────
+function initRain(){
+  const canvas=document.getElementById('rain-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  function resize(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
+  resize(); window.addEventListener('resize',resize);
+  const cols=Math.floor(canvas.width/18);
+  const drops=Array.from({length:cols},()=>Math.random()*canvas.height);
+  let last=0;
+  function frame(ts){
+    requestAnimationFrame(frame);
+    if(ts-last<60) return; // ~16fps
+    last=ts;
+    ctx.fillStyle='rgba(5,5,5,0.12)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#0d2e0d'; ctx.font='13px monospace';
+    drops.forEach((y,i)=>{
+      const ch=String.fromCharCode(0x30A0+Math.random()*96);
+      ctx.fillText(ch,i*18,y);
+      if(y>canvas.height&&Math.random()>0.975) drops[i]=0;
+      else drops[i]=y+8;
+    });
+  }
+  requestAnimationFrame(frame);
+}
+
+// ─── TITLE ASCII ──────────────────────────────────────────────────────────────
+async function initTitleAscii(){
+  const el=document.getElementById('title-city');
+  const fallback=[
+    '  ·  ·  SECTOR 9  ·  ABOVE GROUND  ·  ·',
+    '  ▐█▌ ▐██▌  ▐█▌  ████  ▐█▌  ▐████▌  ▐█▌',
+    '  ███ ████  ███  ████  ███  ██████  ███',
+    '──────────────────────────────────────────',
+    '   ~~  data live  ~~  feeds active  ~~'
+  ].join('\n');
+  el.textContent=fallback;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')startGame();});
+
+(async function init(){
+  document.querySelectorAll('.screen').forEach(s=>{if(s.id!=='title-screen')s.classList.add('hidden');});
+  document.getElementById('title-screen').classList.remove('hidden');
+  await runBoot();
+  initRain();
+  initTitleAscii();
+})();
+</script>
+
+<!-- EMUSOFT BADGE -->
+<div id="emusoft-badge">
+  <div class="emusoft-art">+===================+
+|   E M U S O F T   |
+|   ─────────────   |
+|    Est. 2007      |
++===================+</div>
+  <div class="emusoft-sub">// sector systems division //</div>
+</div>
+<div id="patch-btn">
+  <button onclick="openPatchNotes()">[ PATCH NOTES ]
+// v1.0.1 //</button>
+</div>
+</body>
+</html>

@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNDERPASS // WIKI</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g:#33ff33; --g2:#1d8c1d; --g3:#0a2e0a; --g4:#051005;
+  --dim:#0d2e0d; --mid:#1a5c1a; --bright:#44ff44;
+  --cyn:#00ffcc; --amb:#ffaa00; --red:#ff4444; --pink:#ff69b4;
+  --bg:#030803; --bg2:#060d06; --bg3:#0b160b;
+  --bdr:#0f2a0f; --bdr2:#1a3d1a;
+  --wht:#c8e8c8;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--g2);
+  font-family:'Share Tech Mono',monospace;
+  font-size:13px;
+  line-height:1.7;
+  min-height:100vh;
+}
+
+/* SCANLINE OVERLAY */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px);
+  pointer-events:none;z-index:9999;
+}
+
+/* HEADER */
+#site-header{
+  border-bottom:1px solid var(--bdr2);
+  padding:28px 40px 20px;
+  background:var(--bg);
+  position:sticky;top:0;z-index:100;
+}
+.header-top{
+  display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  margin-bottom:16px;
+}
+.site-title{
+  font-family:'VT323',monospace;
+  font-size:clamp(28px,4vw,42px);
+  color:var(--g);
+  letter-spacing:4px;
+  text-shadow:0 0 20px rgba(51,255,51,.4),0 0 60px rgba(51,255,51,.1);
+  line-height:1;
+}
+.site-sub{
+  color:var(--dim);
+  font-size:10px;
+  letter-spacing:3px;
+  margin-top:6px;
+}
+.header-meta{
+  text-align:right;
+  font-size:10px;
+  color:var(--g3);
+  letter-spacing:1px;
+  line-height:1.8;
+}
+.header-meta span{color:var(--mid);}
+
+/* GAME TABS */
+#game-tabs{
+  display:flex;gap:0;
+}
+.game-tab{
+  background:transparent;
+  border:1px solid var(--bdr);
+  border-bottom:none;
+  color:var(--dim);
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+  letter-spacing:3px;
+  padding:8px 20px;
+  cursor:pointer;
+  transition:all .15s;
+  position:relative;
+}
+.game-tab:hover{color:var(--mid);border-color:var(--bdr2);}
+.game-tab.active{
+  color:var(--g);
+  border-color:var(--bdr2);
+  background:var(--bg3);
+  text-shadow:0 0 8px rgba(51,255,51,.3);
+}
+.game-tab.active::after{
+  content:'';
+  position:absolute;bottom:-1px;left:0;right:0;
+  height:1px;background:var(--bg3);
+}
+.tab-version{
+  font-size:9px;color:var(--dim);margin-left:6px;letter-spacing:1px;
+}
+.game-tab.active .tab-version{color:var(--g3);}
+
+/* MAIN LAYOUT */
+#wiki-body{
+  display:flex;
+  min-height:calc(100vh - 120px);
+}
+
+/* SIDEBAR */
+#sidebar{
+  width:220px;
+  flex-shrink:0;
+  border-right:1px solid var(--bdr);
+  padding:20px 0;
+  position:sticky;
+  top:120px;
+  max-height:calc(100vh - 120px);
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--bdr) transparent;
+}
+.sb-section{margin-bottom:4px;}
+.sb-heading{
+  font-size:9px;
+  letter-spacing:3px;
+  color:var(--g3);
+  padding:10px 16px 4px;
+  border-bottom:1px solid var(--bdr);
+  margin-bottom:4px;
+}
+.sb-link{
+  display:block;
+  padding:4px 16px;
+  color:var(--dim);
+  text-decoration:none;
+  font-size:11px;
+  letter-spacing:1px;
+  transition:all .1s;
+  border-left:2px solid transparent;
+}
+.sb-link:hover{color:var(--g2);border-left-color:var(--mid);}
+.sb-link.active{color:var(--g);border-left-color:var(--g);}
+
+/* CONTENT */
+#content{
+  flex:1;
+  padding:32px 40px;
+  max-width:900px;
+  min-width:0;
+}
+
+.wiki-section{
+  margin-bottom:52px;
+  animation:fadeIn .3s ease forwards;
+  opacity:0;
+}
+.wiki-section:nth-child(1){animation-delay:.05s;}
+.wiki-section:nth-child(2){animation-delay:.1s;}
+.wiki-section:nth-child(3){animation-delay:.15s;}
+.wiki-section:nth-child(4){animation-delay:.2s;}
+.wiki-section:nth-child(5){animation-delay:.25s;}
+.wiki-section:nth-child(6){animation-delay:.3s;}
+.wiki-section:nth-child(7){animation-delay:.35s;}
+.wiki-section:nth-child(8){animation-delay:.4s;}
+@keyframes fadeIn{to{opacity:1;}}
+
+.section-header{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:16px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--bdr2);
+}
+.section-icon{
+  font-size:16px;color:var(--g);
+  text-shadow:0 0 8px rgba(51,255,51,.4);
+}
+h2{
+  font-family:'VT323',monospace;
+  font-size:24px;
+  color:var(--g);
+  letter-spacing:4px;
+  text-shadow:0 0 12px rgba(51,255,51,.2);
+}
+h3{
+  font-size:12px;
+  color:var(--g2);
+  letter-spacing:3px;
+  margin:20px 0 8px;
+}
+
+p{color:var(--wht);font-size:13px;line-height:1.8;margin-bottom:10px;}
+p.dim{color:var(--mid);}
+
+/* HERO BLOCK */
+.game-hero{
+  border:1px solid var(--bdr2);
+  background:var(--bg3);
+  padding:20px 24px;
+  margin-bottom:32px;
+  position:relative;
+  overflow:hidden;
+}
+.game-hero::before{
+  content:'';
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at top left,rgba(51,255,51,.03) 0%,transparent 60%);
+  pointer-events:none;
+}
+.hero-title{
+  font-family:'VT323',monospace;
+  font-size:clamp(32px,5vw,52px);
+  color:var(--g);
+  letter-spacing:6px;
+  text-shadow:0 0 30px rgba(51,255,51,.3);
+  line-height:1;
+  margin-bottom:4px;
+}
+.hero-seq{color:var(--mid);font-size:11px;letter-spacing:4px;margin-bottom:12px;}
+.hero-desc{color:var(--wht);font-size:13px;line-height:1.8;max-width:600px;}
+.hero-stats{
+  display:flex;flex-wrap:wrap;gap:16px;
+  margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--bdr);
+}
+.hero-stat{font-size:10px;color:var(--dim);letter-spacing:1px;}
+.hero-stat span{color:var(--g2);}
+
+/* TABLES */
+.wiki-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:8px;
+  font-size:12px;
+}
+.wiki-table th{
+  text-align:left;
+  padding:6px 10px;
+  font-size:10px;
+  letter-spacing:2px;
+  color:var(--g3);
+  border-bottom:1px solid var(--bdr2);
+  background:var(--bg2);
+}
+.wiki-table td{
+  padding:6px 10px;
+  border-bottom:1px solid var(--bdr);
+  color:var(--wht);
+  vertical-align:top;
+}
+.wiki-table tr:hover td{background:rgba(51,255,51,.02);}
+.wiki-table .name-col{color:var(--g2);}
+.wiki-table .tag{
+  display:inline-block;
+  font-size:9px;
+  padding:1px 5px;
+  border:1px solid;
+  letter-spacing:1px;
+  border-radius:0;
+}
+.tag-weapon{border-color:#556633;color:#88aa44;}
+.tag-armor{border-color:#335566;color:#4488aa;}
+.tag-consumable{border-color:#336633;color:#44aa44;}
+.tag-key{border-color:#665533;color:#aa8844;}
+.tag-unique{border-color:var(--pink);color:var(--pink);}
+.tag-aug{border-color:#553333;color:#aa4444;}
+.tag-boss{border-color:var(--red);color:var(--red);}
+
+/* STAT BADGE */
+.stat-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;color:var(--dim);
+  letter-spacing:.5px;
+}
+.stat-badge.hp{color:#44aa44;}
+.stat-badge.atk{color:#aa4444;}
+.stat-badge.def{color:#4488aa;}
+.stat-badge.xp{color:#aa88aa;}
+.stat-badge.gold{color:var(--amb);}
+
+/* NODE CARDS */
+.node-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:10px;
+  margin-bottom:8px;
+}
+.node-card{
+  border:1px solid var(--bdr);
+  background:var(--bg2);
+  padding:12px 14px;
+  transition:border-color .15s;
+}
+.node-card:hover{border-color:var(--bdr2);}
+.node-card-title{
+  font-size:11px;color:var(--g2);letter-spacing:2px;
+  margin-bottom:4px;
+}
+.node-card-zone{
+  font-size:9px;color:var(--g3);letter-spacing:1px;margin-bottom:6px;
+}
+.node-card-body{
+  font-size:11px;color:var(--mid);line-height:1.6;
+}
+.node-card-choices{
+  margin-top:8px;
+  font-size:10px;color:var(--g3);
+}
+.node-card-choices span{
+  display:block;padding-left:8px;border-left:1px solid var(--bdr);margin-top:2px;
+}
+.node-card-flags{
+  margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;
+}
+
+/* NPC CARDS */
+.npc-card{
+  border:1px solid var(--bdr2);
+  background:var(--bg2);
+  margin-bottom:16px;
+}
+.npc-header{
+  display:flex;align-items:center;gap:16px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--bdr);
+  background:var(--bg3);
+}
+.npc-portrait{
+  font-size:8px;line-height:1.4;white-space:pre;color:var(--dim);flex-shrink:0;
+}
+.npc-meta{flex:1;}
+.npc-name{font-family:'VT323',monospace;font-size:22px;color:var(--g);letter-spacing:3px;}
+.npc-desc{font-size:11px;color:var(--mid);margin-top:2px;}
+.npc-rel-track{
+  display:flex;gap:4px;align-items:center;margin-top:6px;
+}
+.rel-pip{
+  width:12px;height:12px;border:1px solid var(--bdr2);background:transparent;
+  font-size:9px;display:flex;align-items:center;justify-content:center;
+}
+.rel-pip.mara-0{border-color:#1a3a1a;}
+.rel-pip.mara-1{border-color:#2a5a2a;background:#0a2a0a;}
+.rel-pip.mara-2{border-color:#3a7a3a;background:#0f350f;}
+.rel-pip.mara-3{border-color:var(--g2);background:#1a4a1a;}
+.rel-pip.mara-4{border-color:var(--pink);color:var(--pink);}
+.rel-pip.mara-5{border-color:var(--pink);background:#3a0a1a;color:var(--pink);}
+.rel-label{font-size:9px;color:var(--g3);letter-spacing:1px;margin-left:4px;}
+.npc-body{padding:14px 16px;}
+.npc-options-list{list-style:none;margin-top:8px;}
+.npc-options-list li{
+  font-size:11px;color:var(--mid);padding:3px 0 3px 12px;
+  border-left:1px solid var(--bdr);margin-bottom:2px;
+}
+.npc-options-list li.romance{border-left-color:var(--pink);color:#cc5588;}
+.npc-options-list li .req{font-size:9px;color:var(--g3);margin-left:4px;}
+
+/* COMBAT BLOCK */
+.combat-info{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  margin-bottom:8px;
+}
+.combat-col{
+  border:1px solid var(--bdr);background:var(--bg2);padding:14px 16px;
+}
+.combat-col-title{
+  font-size:10px;letter-spacing:3px;color:var(--g3);
+  margin-bottom:10px;border-bottom:1px solid var(--bdr);padding-bottom:6px;
+}
+.combat-row{
+  display:flex;justify-content:space-between;
+  font-size:11px;padding:2px 0;
+  border-bottom:1px dotted var(--bdr);
+}
+.combat-row:last-child{border:none;}
+.combat-row .label{color:var(--g3);}
+.combat-row .val{color:var(--wht);}
+.combat-row .val.atk{color:#ff8888;}
+.combat-row .val.def{color:#88aaff;}
+.combat-row .val.hp{color:#88ff88;}
+
+/* SPOILER / STORY FLOW */
+.flow-chain{
+  display:flex;flex-direction:column;gap:0;
+  border-left:2px solid var(--bdr2);
+  padding-left:16px;
+  margin-left:8px;
+}
+.flow-node{
+  position:relative;
+  padding:6px 0;
+}
+.flow-node::before{
+  content:'';
+  position:absolute;left:-20px;top:14px;
+  width:8px;height:1px;background:var(--bdr2);
+}
+.flow-node-title{font-size:11px;color:var(--g2);letter-spacing:1px;}
+.flow-node-desc{font-size:10px;color:var(--dim);margin-top:1px;}
+.flow-branch{
+  margin-left:12px;margin-top:2px;
+  border-left:1px dashed var(--bdr);
+  padding-left:12px;
+}
+.flow-choice{
+  font-size:10px;color:var(--g3);padding:1px 0;
+}
+.flow-choice.combat{color:#884444;}
+.flow-choice.npc{color:#448888;}
+.flow-choice.unique{color:#886644;}
+
+/* TIPS BOX */
+.tips-box{
+  border:1px solid var(--bdr2);
+  background:var(--bg3);
+  padding:14px 16px;
+  margin-bottom:12px;
+}
+.tips-box.warn{border-color:#553300;background:#0a0600;}
+.tips-box.info{border-color:#003355;background:#00060a;}
+.tips-title{
+  font-size:10px;letter-spacing:3px;color:var(--g3);
+  margin-bottom:8px;
+}
+.tips-box.warn .tips-title{color:#aa6622;}
+.tips-box.info .tips-title{color:#2266aa;}
+.tips-list{list-style:none;}
+.tips-list li{
+  font-size:12px;color:var(--wht);
+  padding:3px 0 3px 14px;
+  border-left:2px solid var(--bdr2);
+  margin-bottom:4px;
+  line-height:1.6;
+}
+.tips-box.warn .tips-list li{border-left-color:#553300;}
+.tips-box.info .tips-list li{border-left-color:#003355;}
+
+/* IMPORT CALLOUT */
+.import-callout{
+  border:1px solid var(--cyn);
+  background:rgba(0,255,204,.03);
+  padding:14px 16px;
+  margin-bottom:20px;
+}
+.import-callout-title{
+  font-size:10px;letter-spacing:3px;color:var(--cyn);margin-bottom:8px;
+}
+.import-callout p{color:#88cccc;font-size:12px;}
+
+/* EASTER EGG */
+.easter-egg{
+  border:1px solid #333311;
+  background:#0a0a04;
+  padding:14px 16px;
+  margin-bottom:12px;
+  position:relative;
+}
+.ee-title{font-size:10px;letter-spacing:3px;color:#665522;margin-bottom:8px;}
+.ee-body{font-size:11px;color:#445522;line-height:1.7;white-space:pre-wrap;}
+
+/* PATCH HISTORY */
+.patch-block{margin-bottom:12px;}
+.patch-ver{
+  font-size:11px;color:var(--g2);letter-spacing:2px;
+  border-bottom:1px solid var(--bdr);padding-bottom:4px;margin-bottom:6px;
+}
+.patch-ver .current{color:var(--g);font-size:9px;margin-left:6px;}
+.patch-entry{
+  font-size:11px;color:var(--mid);padding:2px 0 2px 10px;
+  border-left:2px solid var(--bdr);margin-bottom:3px;
+}
+.patch-entry .fix{color:var(--red);}
+.patch-entry .new{color:var(--cyn);}
+.patch-entry .story{color:#cc44ff;}
+
+/* MOBILE */
+@media(max-width:700px){
+  #site-header{padding:16px 16px 12px;}
+  #sidebar{display:none;}
+  #content{padding:20px 16px;}
+  .combat-info{grid-template-columns:1fr;}
+  .node-grid{grid-template-columns:1fr;}
+  .hero-stats{gap:10px;}
+}
+
+/* GAME PANELS */
+.game-panel{display:none;}
+.game-panel.active{display:block;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bdr2);}
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <div class="header-top">
+    <div>
+      <div class="site-title">// UNDERPASS WIKI //</div>
+      <div class="site-sub">EMUSOFT SECTOR SYSTEMS DIVISION — FIELD DOCUMENTATION</div>
+    </div>
+    <div class="header-meta">
+      CLASSIFICATION: OPEN<br>
+      SECTOR: 9<br>
+      LAST UPDATED: <span>v5.6.1 / v1.0.1</span>
+    </div>
+  </div>
+  <div id="game-tabs">
+    <button class="game-tab active" onclick="switchGame('u1')">
+      UNDERPASS <span class="tab-version">v5.6.1</span>
+    </button>
+    <button class="game-tab" onclick="switchGame('u2')">
+      UNDERPASS 2 <span class="tab-version">v1.0.1</span>
+    </button>
+  </div>
+</header>
+
+<div id="wiki-body">
+  <nav id="sidebar" id="u1-sidebar">
+    <div class="sb-section">
+      <div class="sb-heading">OVERVIEW</div>
+      <a class="sb-link" href="#overview">Overview</a>
+      <a class="sb-link" href="#mechanics">Core Mechanics</a>
+      <a class="sb-link" href="#combat-guide">Combat Guide</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-heading">WORLD</div>
+      <a class="sb-link" href="#story">Story</a>
+      <a class="sb-link" href="#locations">Locations</a>
+      <a class="sb-link" href="#characters">Characters</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-heading">DATABASE</div>
+      <a class="sb-link" href="#items">Items</a>
+      <a class="sb-link" href="#enemies">Enemies</a>
+      <a class="sb-link" href="#shop">Shop</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-heading">META</div>
+      <a class="sb-link" href="#endings">Endings</a>
+      <a class="sb-link" href="#tips">Tips & Strategy</a>
+      <a class="sb-link" href="#changelog">Changelog</a>
+    </div>
+  </nav>
+
+  <main id="content">
+
+    <!-- ═══════════════════════════════ UNDERPASS 1 ═══════════════════════════════ -->
+    <div class="game-panel active" id="panel-u1">
+
+      <div class="game-hero">
+        <div class="hero-title">UNDERPASS</div>
+        <div class="hero-seq">// SECTOR 9 TERMINAL — UNAUTHORIZED ACCESS PROTOCOL //</div>
+        <div class="hero-desc">A text-based cyberpunk RPG set in the underbelly of Sector 9. You wake under a highway overpass with no memory, a note in your sleeve, and Helios Corporation closing in. Navigate the tunnel network, retrieve a stolen data shard, and decide what you're willing to become.</div>
+        <div class="hero-stats">
+          <div class="hero-stat">NODES <span>30</span></div>
+          <div class="hero-stat">ENEMIES <span>8</span></div>
+          <div class="hero-stat">ITEMS <span>14</span></div>
+          <div class="hero-stat">NPCS <span>2</span></div>
+          <div class="hero-stat">ENDINGS <span>3</span></div>
+          <div class="hero-stat">VERSION <span>v5.6.1</span></div>
+        </div>
+      </div>
+
+      <!-- MECHANICS -->
+      <section class="wiki-section" id="mechanics">
+        <div class="section-header">
+          <span class="section-icon">⚙</span>
+          <h2>CORE MECHANICS</h2>
+        </div>
+
+        <h3>OPERATIVE STATS</h3>
+        <div class="combat-info">
+          <div class="combat-col">
+            <div class="combat-col-title">BASE STATS (START)</div>
+            <div class="combat-row"><span class="label">HP</span><span class="val hp">32 / 32</span></div>
+            <div class="combat-row"><span class="label">ATK</span><span class="val atk">5</span></div>
+            <div class="combat-row"><span class="label">DEF</span><span class="val def">3</span></div>
+            <div class="combat-row"><span class="label">LEVEL</span><span class="val">1</span></div>
+            <div class="combat-row"><span class="label">GOLD</span><span class="val gold">¢ 0</span></div>
+          </div>
+          <div class="combat-col">
+            <div class="combat-col-title">LEVEL UP THRESHOLDS</div>
+            <div class="combat-row"><span class="label">LVL 2</span><span class="val">100 XP → +8 HP, +1 ATK</span></div>
+            <div class="combat-row"><span class="label">LVL 3</span><span class="val">250 XP</span></div>
+            <div class="combat-row"><span class="label">LVL 4</span><span class="val">450 XP</span></div>
+            <div class="combat-row"><span class="label">LVL 5</span><span class="val">700 XP</span></div>
+            <div class="combat-row"><span class="label">LVL 6</span><span class="val">1000 XP</span></div>
+            <div class="combat-row"><span class="label">LVL 7</span><span class="val">1400 XP</span></div>
+          </div>
+        </div>
+
+        <h3>NEEDS SYSTEM</h3>
+        <p>Your operative tracks <strong>Hunger</strong> and <strong>Warmth</strong> (each 0–5). Certain nodes and actions drain these. Hitting 0 Hunger while it's being drained deals <strong>-3 HP</strong> per instance. Hitting 0 Warmth reduces DEF by 1. Both can be restored via items or specific story nodes.</p>
+
+        <h3>SAVE SYSTEM</h3>
+        <p>Saves are stored in browser localStorage per slot and can be exported as JSON strings — useful for moving between devices or importing into Underpass 2. Use <strong>[ COPY SAVE ]</strong> in the header to access export and slot management.</p>
+      </section>
+
+      <!-- COMBAT GUIDE -->
+      <section class="wiki-section" id="combat-guide">
+        <div class="section-header">
+          <span class="section-icon">⚔</span>
+          <h2>COMBAT GUIDE</h2>
+        </div>
+
+        <div class="combat-info">
+          <div class="combat-col">
+            <div class="combat-col-title">PLAYER ACTIONS</div>
+            <div class="combat-row"><span class="label">ATTACK</span><span class="val">ATK + d6 − enemy DEF</span></div>
+            <div class="combat-row"><span class="label">HEAVY</span><span class="val">ATK + d8 − enemy DEF (10% miss)</span></div>
+            <div class="combat-row"><span class="label">ITEM</span><span class="val">Use first consumable in inventory</span></div>
+            <div class="combat-row"><span class="label">FLEE</span><span class="val">55% escape chance</span></div>
+          </div>
+          <div class="combat-col">
+            <div class="combat-col-title">ENEMY ACTION</div>
+            <div class="combat-row"><span class="label">ATTACK</span><span class="val">enemy ATK + d4 − your DEF</span></div>
+            <div class="combat-row"><span class="label">CRIT</span><span class="val">10% chance on player strike (×1.8 dmg)</span></div>
+            <div class="combat-row"><span class="label">RAGE</span><span class="val">Boss: ATK ×1.25 at threshold HP</span></div>
+            <div class="combat-row"><span class="label">STUN</span><span class="val">EMP Scrambler — 1 turn skip (augmented only)</span></div>
+          </div>
+        </div>
+
+        <div class="tips-box warn">
+          <div class="tips-title">// COMBAT TIPS</div>
+          <ul class="tips-list">
+            <li>Use <strong>HEAVY</strong> when you need to break through high DEF — d8 roll significantly outperforms d6 at the cost of a 10% miss chance.</li>
+            <li>The <strong>Ghost Chip</strong> now guarantees evade for 2 turns — use it before predictably heavy hits (Nakamura's rage phase).</li>
+            <li>Augmented enemies (marked [AUG]) are immune to bleed but stunnable with the EMP Scrambler.</li>
+            <li>Nakamura enters rage mode at 25 HP, boosting ATK by 25%. Save healing items for that phase.</li>
+            <li>Gray's intel about Nakamura's left side (flag: <code>gray_bridge</code>) gives you an advantage approach node at the bridge — costs nothing and reduces fight difficulty slightly.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- STORY -->
+      <section class="wiki-section" id="story">
+        <div class="section-header">
+          <span class="section-icon">◈</span>
+          <h2>STORY</h2>
+        </div>
+        <p>You wake under Highway 9 with no memory and a note in your sleeve addressed from yourself: <em>Find Mara — Tunnel 9. She has what they want.</em> Helios Corporation's data shard — containing evidence of an illegal population trial run on Sector 9's residents — is hidden in their factory. Mara, a former Helios data architect, needs an unknown operative to retrieve it.</p>
+        <p>The story unfolds across five zones, culminating in a confrontation with Nakamura — Helios' field commander — on the Sector 7 bridge.</p>
+
+        <h3>STORY MAP</h3>
+        <div class="flow-chain">
+          <div class="flow-node">
+            <div class="flow-node-title">SECTOR 9 SURFACE — Start</div>
+            <div class="flow-node-desc">Highway 9 underpass. Three opening paths diverge immediately.</div>
+            <div class="flow-branch">
+              <div class="flow-choice">Search underpass → salvage utility knife, medkit, ¢28</div>
+              <div class="flow-choice">Read the note → context for the mission</div>
+              <div class="flow-choice unique">All paths converge at Tunnel 9 Entrance</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">TUNNEL 9 ENTRANCE — tunnel_approach</div>
+            <div class="flow-node-desc">A ganger blocks the way. Four entry options.</div>
+            <div class="flow-branch">
+              <div class="flow-choice combat">Fight → inside_tunnel (ganger combat)</div>
+              <div class="flow-choice">Talk (name Mara) → inside_tunnel + ¢20</div>
+              <div class="flow-choice">Above ground → guard encounter, drain escape</div>
+              <div class="flow-choice unique">Ghost Chip required → silent entry (consumes chip)</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">TUNNEL NETWORK — inside_tunnel</div>
+            <div class="flow-node-desc">Hub node. Black market, Mara, Gray, and a maintenance hatch.</div>
+            <div class="flow-branch">
+              <div class="flow-choice npc">Talk to Mara → mission briefing + relationship arc</div>
+              <div class="flow-choice npc">Talk to Gray → intel on Nakamura's weak side</div>
+              <div class="flow-choice">Browse market → shop access</div>
+              <div class="flow-choice combat">Maintenance hatch → hound fight → ¢25 + power cell</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">HELIOS FACTORY — factory_entrance</div>
+            <div class="flow-node-desc">Three ways into the building.</div>
+            <div class="flow-branch">
+              <div class="flow-choice combat">Factory floor → two guard fights → ghost operative fight</div>
+              <div class="flow-choice unique">Wire Cutters required → service corridor → server room (quiet)</div>
+              <div class="flow-choice">Scavenge perimeter → random loot event</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">SERVER ROOM — Level 3</div>
+            <div class="flow-node-desc">Retrieve the data shard. Enforcer encounter.</div>
+            <div class="flow-branch">
+              <div class="flow-choice unique">EMP Scrambler → non-lethal takedown, clean escape</div>
+              <div class="flow-choice combat">Fight enforcer → escape with shard</div>
+              <div class="flow-choice">Grab and bolt → alarm triggers, escape anyway</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">SECTOR 7 BRIDGE — Final confrontation</div>
+            <div class="flow-node-desc">Nakamura. Four approach options.</div>
+            <div class="flow-branch">
+              <div class="flow-choice combat">Fight directly → victory</div>
+              <div class="flow-choice">Negotiate → he refuses → fight</div>
+              <div class="flow-choice">Offer to defect → moral weight scene → fight</div>
+              <div class="flow-choice unique">Gray's intel (flag required) → tactical advantage → fight</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOCATIONS -->
+      <section class="wiki-section" id="locations">
+        <div class="section-header">
+          <span class="section-icon">◉</span>
+          <h2>LOCATIONS</h2>
+        </div>
+        <div class="node-grid">
+          <div class="node-card"><div class="node-card-title">HIGHWAY 9 UNDERPASS</div><div class="node-card-zone">SECTOR 9 SURFACE</div><div class="node-card-body">Starting location. Concrete, gravel, a rat. Salvage yields utility knife, medkit, ¢28.</div></div>
+          <div class="node-card"><div class="node-card-title">TUNNEL 9 ENTRANCE</div><div class="node-card-zone">SECTOR 9 SURFACE</div><div class="node-card-body">Ganger checkpoint. Four entry routes — combat, social, stealth, or alternate path.</div></div>
+          <div class="node-card"><div class="node-card-title">TUNNEL NETWORK</div><div class="node-card-zone">TUNNEL 9</div><div class="node-card-body">Main hub. Market, NPCs, and a maintenance hatch to the lower drains.</div></div>
+          <div class="node-card"><div class="node-card-title">BLACK MARKET</div><div class="node-card-zone">TUNNEL 9</div><div class="node-card-body">Run by an old woman with a camera eye. Full shop access. She calls Ghost Chips "slip tabs."</div></div>
+          <div class="node-card"><div class="node-card-title">MAINTENANCE LEVEL</div><div class="node-card-zone">TUNNEL 9</div><div class="node-card-body">Optional. Hound encounter rewards ¢25 + power cell + factory map fragment.</div></div>
+          <div class="node-card"><div class="node-card-title">HELIOS FACTORY</div><div class="node-card-zone">DEEP SECTOR</div><div class="node-card-body">Three entry approaches. Direct route requires fighting two guards + ghost operative.</div></div>
+          <div class="node-card"><div class="node-card-title">SERVICE CORRIDOR</div><div class="node-card-zone">DEEP SECTOR</div><div class="node-card-body">Wire Cutters only. Bypasses guards entirely, reaching Level 3 undetected.</div></div>
+          <div class="node-card"><div class="node-card-title">SERVER ROOM — L3</div><div class="node-card-zone">HELIOS FACTORY</div><div class="node-card-body">Data shard location. Enforcer encounter. EMP Scrambler enables non-combat extraction.</div></div>
+          <div class="node-card"><div class="node-card-title">SECTOR 7 BRIDGE</div><div class="node-card-zone">EXTRACTION</div><div class="node-card-body">Final confrontation. Nakamura (64 HP, ATK 11, DEF 6, rage at 25 HP).</div></div>
+        </div>
+      </section>
+
+      <!-- CHARACTERS -->
+      <section class="wiki-section" id="characters">
+        <div class="section-header">
+          <span class="section-icon">♥</span>
+          <h2>CHARACTERS</h2>
+        </div>
+
+        <div class="npc-card">
+          <div class="npc-header">
+            <div class="npc-portrait">  ░░░░░░░░░░
+ ░ [■■][■■] ░
+ ░  ──────  ░
+  ░░░░░░░░░░
+  [soldering]</div>
+            <div class="npc-meta">
+              <div class="npc-name">MARA</div>
+              <div class="npc-desc">Former Helios data architect. Six months underground. Built the infrastructure they used to run the trial — and the reason she can't stop now.</div>
+              <div class="npc-rel-track">
+                <div class="rel-pip mara-0">·</div>
+                <div class="rel-pip mara-1">·</div>
+                <div class="rel-pip mara-2">·</div>
+                <div class="rel-pip mara-3">·</div>
+                <div class="rel-pip mara-4">♥</div>
+                <div class="rel-pip mara-5">♥</div>
+                <span class="rel-label">RELATIONSHIP TRACK (0–5)</span>
+              </div>
+            </div>
+          </div>
+          <div class="npc-body">
+            <h3>DIALOGUE OPTIONS BY RELATIONSHIP LEVEL</h3>
+            <ul class="npc-options-list">
+              <li><strong>REL 0</strong> — Accept mission (→ factory), ask about guards (gives EMP Scrambler), ask backstory, ask personal history</li>
+              <li><strong>REL 1</strong> — Ask about ghost operative, go to factory, ask how she's holding up (+1)</li>
+              <li><strong>REL 2</strong> — Ask about shard contents (+1), head out, thank her for the coffee (+1) <span class="romance">♥ romance</span></li>
+              <li><strong>REL 3</strong> — Go to bridge, ask to know more about her (+1) <span class="romance">♥ romance</span></li>
+              <li class="romance"><strong>REL 4</strong> — "I'll come back" (→ factory), tell her she matters (+1, confession, gives flask) <span class="req">♥ romance</span></li>
+            </ul>
+            <p style="margin-top:10px;font-size:11px;color:var(--dim);">Key flags: <code>mara_confession</code> (triggers romance ending), <code>mara_accepted</code>, <code>mara_shard_truth</code></p>
+          </div>
+        </div>
+
+        <div class="npc-card">
+          <div class="npc-header">
+            <div class="npc-portrait">  ╔══════╗
+  ║ ·  · ║
+  ║  ──  ║
+  ╚══════╝
+  [watching]</div>
+            <div class="npc-meta">
+              <div class="npc-name">GRAY</div>
+              <div class="npc-desc">Supply runner between sectors. Tactical informant. He's been underground long enough to know what "Level 4 containment" means for you.</div>
+            </div>
+          </div>
+          <div class="npc-body">
+            <h3>INTEL OPTIONS</h3>
+            <ul class="npc-options-list">
+              <li><strong>Ask about factory</strong> — Guard rotation intel (corrects Mara's three-hour figure: it's eight). Sets flag <code>gray_helios</code></li>
+              <li><strong>Ask about Nakamura</strong> — Critical: "Go left. His right side is plated." Sets flag <code>gray_bridge</code> — unlocks tactical approach node at bridge</li>
+              <li><strong>Response tier (REL 1)</strong> — Context on Helios Level 4 escalation</li>
+            </ul>
+            <div class="tips-box info" style="margin-top:10px;">
+              <div class="tips-title">// STRATEGY NOTE</div>
+              <ul class="tips-list">
+                <li>Getting <code>gray_bridge</code> before the final confrontation is free — no combat, no cost. The bridge_gray node gives a combat advantage and a more satisfying approach to the finale.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ITEMS -->
+      <section class="wiki-section" id="items">
+        <div class="section-header">
+          <span class="section-icon">▣</span>
+          <h2>ITEMS</h2>
+        </div>
+        <table class="wiki-table">
+          <thead><tr><th>ITEM</th><th>TYPE</th><th>EFFECT</th><th>SOURCE</th></tr></thead>
+          <tbody>
+            <tr><td class="name-col">⚔ Utility Knife</td><td><span class="tag tag-weapon">WEAPON</span></td><td>+3 ATK (equip)</td><td>Salvage / start</td></tr>
+            <tr><td class="name-col">◆ Combat Blade</td><td><span class="tag tag-weapon">WEAPON</span></td><td>+6 ATK (equip)</td><td>Shop ¢85</td></tr>
+            <tr><td class="name-col">◈ Body Armor</td><td><span class="tag tag-armor">ARMOR</span></td><td>+4 DEF (equip)</td><td>Shop ¢60</td></tr>
+            <tr><td class="name-col">⬡ Rat Coat</td><td><span class="tag tag-armor">ARMOR</span></td><td>+2 DEF (equip)</td><td>Shop / scavenge</td></tr>
+            <tr><td class="name-col">✚ Medkit</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+25 HP</td><td>Shop ¢35 / salvage</td></tr>
+            <tr><td class="name-col">◉ Power Cell</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+15 HP</td><td>Shop ¢20 / drops</td></tr>
+            <tr><td class="name-col">↑ Combat Stims</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+6 ATK for 3 turns</td><td>Shop ¢45</td></tr>
+            <tr><td class="name-col">▲ Adrenaline</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+4 ATK + 10 HP</td><td>Shop ¢40</td></tr>
+            <tr><td class="name-col">◑ Ghost Chip</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>Guaranteed evade, 2 turns</td><td>Shop ¢70 ("slip tabs")</td></tr>
+            <tr><td class="name-col">☠ Toxin Syringe</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>Inflicts bleed on enemy</td><td>Shop ¢55</td></tr>
+            <tr><td class="name-col">◈ Overclock Tab</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+8 ATK 2 turns, -8 HP recoil</td><td>Shop ¢65</td></tr>
+            <tr><td class="name-col">▫ Street Food</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+2 Hunger</td><td>Shop ¢12</td></tr>
+            <tr><td class="name-col">◧ Thermal Wrap</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+3 Warmth</td><td>Shop ¢18</td></tr>
+            <tr><td class="name-col">⚡ EMP Scrambler</td><td><span class="tag tag-key">KEY</span></td><td>Stuns augmented enemies</td><td>Mara (intel dialogue)</td></tr>
+            <tr><td class="name-col">✂ Wire Cutters</td><td><span class="tag tag-key">KEY</span></td><td>Opens service corridor</td><td>Scavenge / shop</td></tr>
+            <tr><td class="name-col">▣ Data Shard</td><td><span class="tag tag-key">KEY</span></td><td>Mission objective</td><td>Server Room — Level 3</td></tr>
+            <tr><td class="name-col">♥ Mara's Flask</td><td><span class="tag tag-unique">UNIQUE</span></td><td>+20 HP, +1 ATK permanent (once only)</td><td>Mara — confession dialogue (REL 4)</td></tr>
+          </tbody>
+        </table>
+        <div class="tips-box">
+          <div class="tips-title">// MARA'S FLASK — UNIQUE MECHANIC</div>
+          <ul class="tips-list">
+            <li>The only item in the game that grants a permanent stat increase. The +1 ATK is applied once via the <code>unique:true</code> flag — it cannot be stacked or duplicated.</li>
+            <li>Best used during the Nakamura fight — the heal and ATK boost together are a significant swing at the most critical moment.</li>
+            <li>Carries over to Underpass 2 if exported (as a basic +8 HP consumable with lore desc "From Sector 9").</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ENEMIES -->
+      <section class="wiki-section" id="enemies">
+        <div class="section-header">
+          <span class="section-icon">▓</span>
+          <h2>ENEMIES</h2>
+        </div>
+        <table class="wiki-table">
+          <thead><tr><th>ENEMY</th><th>HP</th><th>ATK</th><th>DEF</th><th>XP</th><th>GOLD</th><th>NOTES</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="name-col">Tunnel Ganger</td>
+              <td><span class="stat-badge hp">18</span></td>
+              <td><span class="stat-badge atk">3</span></td>
+              <td><span class="stat-badge def">1</span></td>
+              <td><span class="stat-badge xp">25</span></td>
+              <td><span class="stat-badge gold">¢12</span></td>
+              <td>Can bleed. First enemy in game.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Rat Swarm</td>
+              <td><span class="stat-badge hp">12</span></td>
+              <td><span class="stat-badge atk">2</span></td>
+              <td><span class="stat-badge def">0</span></td>
+              <td><span class="stat-badge xp">15</span></td>
+              <td><span class="stat-badge gold">¢5</span></td>
+              <td>Can bleed. Scavenge event only.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Helios Watcher</td>
+              <td><span class="stat-badge hp">20</span></td>
+              <td><span class="stat-badge atk">4</span></td>
+              <td><span class="stat-badge def">2</span></td>
+              <td><span class="stat-badge xp">30</span></td>
+              <td><span class="stat-badge gold">¢18</span></td>
+              <td><span class="tag tag-aug">AUGMENTED</span> Stun-vulnerable.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Helios Guard</td>
+              <td><span class="stat-badge hp">28</span></td>
+              <td><span class="stat-badge atk">6</span></td>
+              <td><span class="stat-badge def">2</span></td>
+              <td><span class="stat-badge xp">50</span></td>
+              <td><span class="stat-badge gold">¢30</span></td>
+              <td>Factory floor ×2.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Security Hound</td>
+              <td><span class="stat-badge hp">22</span></td>
+              <td><span class="stat-badge atk">6</span></td>
+              <td><span class="stat-badge def">2</span></td>
+              <td><span class="stat-badge xp">40</span></td>
+              <td><span class="stat-badge gold">¢20</span></td>
+              <td><span class="tag tag-aug">AUGMENTED</span> Maintenance hatch only.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Corp Enforcer</td>
+              <td><span class="stat-badge hp">45</span></td>
+              <td><span class="stat-badge atk">8</span></td>
+              <td><span class="stat-badge def">4</span></td>
+              <td><span class="stat-badge xp">80</span></td>
+              <td><span class="stat-badge gold">¢60</span></td>
+              <td><span class="tag tag-aug">AUGMENTED</span> Server room guard. EMP Scrambler skips fight entirely.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Ghost Operative</td>
+              <td><span class="stat-badge hp">35</span></td>
+              <td><span class="stat-badge atk">10</span></td>
+              <td><span class="stat-badge def">3</span></td>
+              <td><span class="stat-badge xp">90</span></td>
+              <td><span class="stat-badge gold">¢55</span></td>
+              <td>Can bleed. Factory floor — direct route only.</td>
+            </tr>
+            <tr>
+              <td class="name-col">NAKAMURA <span class="tag tag-boss">FINAL BOSS</span></td>
+              <td><span class="stat-badge hp">64</span></td>
+              <td><span class="stat-badge atk">11</span></td>
+              <td><span class="stat-badge def">6</span></td>
+              <td><span class="stat-badge xp">200</span></td>
+              <td><span class="stat-badge gold">¢150</span></td>
+              <td>Can bleed. Rage mode at 25 HP: ATK ×1.25. Bridge — mandatory.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SHOP -->
+      <section class="wiki-section" id="shop">
+        <div class="section-header">
+          <span class="section-icon">¢</span>
+          <h2>SHOP</h2>
+        </div>
+        <p class="dim">The Black Market in the Tunnel Network. Run by an unnamed trader with a camera eye.</p>
+        <table class="wiki-table">
+          <thead><tr><th>ITEM</th><th>PRICE</th><th>EFFECT</th></tr></thead>
+          <tbody>
+            <tr><td class="name-col">◉ Power Cell</td><td>¢20</td><td>+15 HP</td></tr>
+            <tr><td class="name-col">▫ Street Food</td><td>¢12</td><td>+2 Hunger</td></tr>
+            <tr><td class="name-col">◧ Thermal Wrap</td><td>¢18</td><td>+3 Warmth</td></tr>
+            <tr><td class="name-col">✚ Medkit</td><td>¢35</td><td>+25 HP</td></tr>
+            <tr><td class="name-col">▲ Adrenaline</td><td>¢40</td><td>+4 ATK + 10 HP</td></tr>
+            <tr><td class="name-col">↑ Combat Stims</td><td>¢45</td><td>+6 ATK / 3 turns</td></tr>
+            <tr><td class="name-col">☠ Toxin Syringe</td><td>¢55</td><td>Enemy bleed</td></tr>
+            <tr><td class="name-col">◈ Body Armor</td><td>¢60</td><td>+4 DEF</td></tr>
+            <tr><td class="name-col">◈ Overclock Tab</td><td>¢65</td><td>+8 ATK 2 turns, -8 HP</td></tr>
+            <tr><td class="name-col">◑ Ghost Chip</td><td>¢70</td><td>Guaranteed evade, 2 turns</td></tr>
+            <tr><td class="name-col">◆ Combat Blade</td><td>¢85</td><td>+6 ATK</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ENDINGS -->
+      <section class="wiki-section" id="endings">
+        <div class="section-header">
+          <span class="section-icon">◎</span>
+          <h2>ENDINGS</h2>
+        </div>
+        <h3>STANDARD ENDING</h3>
+        <p>Defeat Nakamura and cross the bridge. Mara confirms the data is transmitting on six feeds. You walk. The city glows behind you.</p>
+        <h3>MARA — COFFEE ENDING (REL ≥ 3)</h3>
+        <p>After the standard ending, a terminal message from Mara: <em>"I owe you a proper coffee. Above ground, somewhere."</em> A quiet acknowledgement without commitment.</p>
+        <h3>MARA — ROMANCE ENDING (REL ≥ 4 + confession flag)</h3>
+        <p>The fullest ending. Mara's message: <em>"Data is live. Six feeds. Unstoppable."</em> Then — she found a place above ground. Morning light. She'll send coordinates. <em>"Come find me."</em></p>
+        <div class="tips-box">
+          <div class="tips-title">// ENDING REQUIREMENTS</div>
+          <ul class="tips-list">
+            <li>Romance ending requires: REL 4 + <code>mara_confession</code> flag. To reach this: at REL 3, choose "I want to know more about you" (+1 to REL 4), then "Tell her she matters to you" (confession, sets flag, gives flask).</li>
+            <li>After confession, the NPC panel refreshes showing the REL 4 options. Choose "I'll come back" to head to the factory — NOT the bridge.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- TIPS -->
+      <section class="wiki-section" id="tips">
+        <div class="section-header">
+          <span class="section-icon">↑</span>
+          <h2>TIPS & STRATEGY</h2>
+        </div>
+        <div class="tips-box">
+          <div class="tips-title">// OPTIMAL EARLY GAME PATH</div>
+          <ul class="tips-list">
+            <li>Search the underpass first (utility knife + medkit + ¢28) before heading to the tunnel entrance.</li>
+            <li>Talk your way past the ganger ("Looking for Mara") — saves HP and earns ¢20. Fighting him early with only the knife is risky.</li>
+            <li>In the tunnel network, speak to Gray before Mara — the Nakamura intel is free and permanently unlocks a bridge approach option.</li>
+            <li>Check the maintenance hatch if you have HP to spare — the hound drops ¢25 + power cell.</li>
+          </ul>
+        </div>
+        <div class="tips-box warn">
+          <div class="tips-title">// FACTORY — ROUTE CHOICE</div>
+          <ul class="tips-list">
+            <li>The service corridor (Wire Cutters required) is the best route — bypasses two guard fights and the ghost operative, reaching the server room with full HP.</li>
+            <li>The ghost operative (ATK 10) is the hardest pre-boss fight. If going direct, use stims or adrenaline beforehand.</li>
+            <li>The EMP Scrambler (from Mara's intel dialogue) skips the enforcer fight entirely — worth getting even if you plan to fight through everything else.</li>
+          </ul>
+        </div>
+        <div class="tips-box info">
+          <div class="tips-title">// NAKAMURA FIGHT PREP</div>
+          <ul class="tips-list">
+            <li>Target HP going into the bridge: 30+ ideally. Stock at least one medkit or power cell.</li>
+            <li>Mara's Flask (+20 HP + permanent +1 ATK) is extremely strong here if saved — pop it at the start of the fight or when HP drops low.</li>
+            <li>Ghost Chip provides guaranteed evade for 2 turns — use it immediately when Nakamura enters rage mode (≤25 HP).</li>
+            <li>Gray's intel unlocks bridge_gray which gives a slight tactical edge in the opening — worth having.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- CHANGELOG -->
+      <section class="wiki-section" id="changelog">
+        <div class="section-header">
+          <span class="section-icon">◇</span>
+          <h2>CHANGELOG</h2>
+        </div>
+        <div class="patch-block">
+          <div class="patch-ver">v5.6.1 <span class="current">current</span></div>
+          <div class="patch-entry"><span class="fix">FIX</span> Nakamura HP 70 → 64</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Ghost Chip: guaranteed evade (removed 38% RNG check)</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Heavy attack miss chance 22% → 10%</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Early economy: search_underpass ¢15 → ¢28; tunnel_talk now awards ¢20</div>
+        </div>
+        <div class="patch-block">
+          <div class="patch-ver">v5.6.0</div>
+          <div class="patch-entry"><span class="fix">FIX</span> All enemy ATK reduced 1–2; Nakamura rage 1.4× → 1.25×, threshold 35 → 25</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Player starts with 32 HP, 3 DEF (was 30 / 2)</div>
+          <div class="patch-entry"><span class="new">NEW</span> Mara's Flask: unique item, +20 HP + permanent +1 ATK on use</div>
+        </div>
+        <div class="patch-block">
+          <div class="patch-ver">v5.5.9</div>
+          <div class="patch-entry"><span class="fix">FIX</span> NPC choices now re-render after dialogue — relationship level changes apply immediately</div>
+        </div>
+        <div class="patch-block">
+          <div class="patch-ver">v5.5.8</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Mara route at REL 4 — was routing to bridge, now correctly routes to factory</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Victory/gameover screens: background + z-index added to prevent game-screen bleedthrough</div>
+          <div class="patch-entry"><span class="fix">FIX</span> btn-sm: white-space:nowrap prevents bracket wrapping on mobile</div>
+        </div>
+      </section>
+
+    </div><!-- end panel-u1 -->
+
+    <!-- ═══════════════════════════════ UNDERPASS 2 ═══════════════════════════════ -->
+    <div class="game-panel" id="panel-u2">
+
+      <div class="import-callout">
+        <div class="import-callout-title">// UNDERPASS 1 SAVE IMPORT</div>
+        <p>Underpass 2 accepts exported save data from Underpass 1. On the title screen, use <strong>[ IMPORT UNDERPASS 1 SAVE ]</strong> and paste your export JSON. Carries over: operative name, Mara relationship level, kills, 50% of gold, and key items (Mara's Flask, Data Shard, Combat Blade, Body Armor, Utility Knife). Stats are rescaled based on your U1 level with a veteran bonus to HP, ATK, and DEF.</p>
+      </div>
+
+      <div class="game-hero">
+        <div class="hero-title">UNDERPASS 2</div>
+        <div class="hero-seq">// SEQUENCE 2: CONTINUATION PROTOCOL — SECTOR 9 TERMINAL //</div>
+        <div class="hero-desc">Six hours after the bridge. The data is live. But Helios has authorised Project REVENANT — Nakamura is being rebuilt in sub-basement four of the Spire, this time without the inconvenience of choosing. Mara needs you back above ground. The window is narrow.</div>
+        <div class="hero-stats">
+          <div class="hero-stat">NODES <span>25</span></div>
+          <div class="hero-stat">ENEMIES <span>7</span></div>
+          <div class="hero-stat">ITEMS <span>19</span></div>
+          <div class="hero-stat">NPCS <span>1</span></div>
+          <div class="hero-stat">ENDINGS <span>3</span></div>
+          <div class="hero-stat">VERSION <span>v1.0.1</span></div>
+        </div>
+      </div>
+
+      <!-- MECHANICS -->
+      <section class="wiki-section" id="u2-mechanics">
+        <div class="section-header">
+          <span class="section-icon">⚙</span>
+          <h2>CORE MECHANICS</h2>
+        </div>
+        <h3>OPERATIVE STATS (NEW GAME)</h3>
+        <div class="combat-info">
+          <div class="combat-col">
+            <div class="combat-col-title">BASE STATS</div>
+            <div class="combat-row"><span class="label">HP</span><span class="val hp">35 / 35</span></div>
+            <div class="combat-row"><span class="label">ATK</span><span class="val atk">6</span></div>
+            <div class="combat-row"><span class="label">DEF</span><span class="val def">2</span></div>
+          </div>
+          <div class="combat-col">
+            <div class="combat-col-title">U1 IMPORT BONUSES</div>
+            <div class="combat-row"><span class="label">HP</span><span class="val hp">35 + (U1 level × 5)</span></div>
+            <div class="combat-row"><span class="label">ATK</span><span class="val atk">6 + floor(U1 level × 0.7)</span></div>
+            <div class="combat-row"><span class="label">DEF</span><span class="val def">2 + floor(U1 level × 0.4)</span></div>
+            <div class="combat-row"><span class="label">GOLD</span><span class="val gold">50% of U1 gold carried</span></div>
+          </div>
+        </div>
+        <p style="margin-top:8px;">A U1 veteran at level 7 starts with: <strong>HP 70, ATK 10, DEF 4</strong> — a meaningful advantage that scales the early game differently without making it trivial.</p>
+
+        <h3>SCAVENGE SYSTEM</h3>
+        <p>The transit hub maintenance bay introduces a scavenge event early. Each depth level (1–4) triggers a random event — loot, gold, or nothing. Going deeper costs 1 Hunger. Events include: medkit, power cell, ¢35–60 cash, combat blade, neural jack, or scavenge stims.</p>
+      </section>
+
+      <!-- COMBAT GUIDE -->
+      <section class="wiki-section" id="u2-combat">
+        <div class="section-header">
+          <span class="section-icon">⚔</span>
+          <h2>COMBAT GUIDE</h2>
+        </div>
+        <p>Combat uses the same engine as Underpass 1. Key differences in U2: enemies are generally tougher from the start, and NAKAMURA-Ω is a substantially harder final boss.</p>
+
+        <div class="tips-box warn">
+          <div class="tips-title">// NAKAMURA-Ω — FINAL BOSS</div>
+          <ul class="tips-list">
+            <li><strong>120 HP, ATK 18, DEF 8</strong> — significantly harder than U1 Nakamura. At 60 HP remaining, rage mode activates (ATK ×1.35).</li>
+            <li>Cannot bleed — fully synthetic. EMP Scrambler stuns him (he's augmented).</li>
+            <li>Recommended approach: reach the Spire at level 3+, with Hardplate or Body Armor equipped, and at least two healing consumables.</li>
+            <li>The Overclock Chip (+8 ATK, -5 HP recoil) is excellent here — high damage output compensates for his heavy DEF.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- STORY -->
+      <section class="wiki-section" id="u2-story">
+        <div class="section-header">
+          <span class="section-icon">◈</span>
+          <h2>STORY</h2>
+        </div>
+        <p>Six hours after the Sector 7 bridge. You're at the surface transit hub — the data is live, but Helios has responded by authorising Project REVENANT: they're rebuilding Nakamura in sub-basement four of the Helios Spire, this time as something designed rather than augmented. Mara contacts you with coordinates. The reconstruction is 78% complete. You have a window.</p>
+
+        <h3>STORY MAP</h3>
+        <div class="flow-chain">
+          <div class="flow-node">
+            <div class="flow-node-title">ACT ONE — SECTOR SURFACE</div>
+            <div class="flow-node-desc">Transit hub. Above ground. Helios face-matching active within the hour.</div>
+            <div class="flow-branch">
+              <div class="flow-choice">Scavenge transit maintenance bay → random loot</div>
+              <div class="flow-choice">Street level → Helios agent tailing you</div>
+              <div class="flow-choice">Market district → shop access, intel, biometric cloak</div>
+              <div class="flow-choice unique">All paths converge at Mara's safehouse</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">MARA'S SAFEHOUSE</div>
+            <div class="flow-node-desc">Reunion. Project REVENANT briefing. Relationship arc continues.</div>
+            <div class="flow-branch">
+              <div class="flow-choice npc">Talk to Mara → briefing, intel, relationship options</div>
+              <div class="flow-choice">Go straight to the Spire</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">THE SPIRE — HELIOS TOWER</div>
+            <div class="flow-node-desc">Loading bay entry at 0147. Two guards inside.</div>
+            <div class="flow-branch">
+              <div class="flow-choice combat">Take out exterior guard first</div>
+              <div class="flow-choice">Move in during guard rotation</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">SPIRE LOBBY</div>
+            <div class="flow-node-desc">Marble and surveillance. Security checkpoint.</div>
+            <div class="flow-branch">
+              <div class="flow-choice unique">Biometric Cloak → walk past security</div>
+              <div class="flow-choice">Maintenance stairs → reach upper floors</div>
+              <div class="flow-choice combat">Create distraction → enforcer fight</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">UPPER FLOORS</div>
+            <div class="flow-node-desc">Three optional paths before descending to B4.</div>
+            <div class="flow-branch">
+              <div class="flow-choice unique">Legacy terminal (B2) → Project REVENANT files → easter egg call</div>
+              <div class="flow-choice combat">Revenant Guard at B4 elevator → key obtained</div>
+              <div class="flow-choice combat">Server floor search → spire elite fight → overclock chip</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">PROJECT REVENANT — LAB B4</div>
+            <div class="flow-node-desc">Sub-basement four. Nakamura-Ω is awake.</div>
+            <div class="flow-branch">
+              <div class="flow-choice combat">"Then let it end here." → final fight</div>
+              <div class="flow-choice">Confront him → doubt scene → fight anyway</div>
+            </div>
+          </div>
+          <div class="flow-node">
+            <div class="flow-node-title">ROOF — FINAL</div>
+            <div class="flow-node-desc">40 floors up. Rain. The city below.</div>
+            <div class="flow-branch">
+              <div class="flow-choice combat">NAKAMURA-Ω final combat → victory</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EASTER EGG -->
+        <div class="easter-egg">
+          <div class="ee-title">// EASTER EGG — EXECUTIVE PRIORITY LINE</div>
+          <div class="ee-body">Located in sub-basement 2 of the Helios Spire.
+
+Find the legacy terminal (pre-Helios infrastructure, theoretically offline).
+Run a bypass. Navigate to a deprecated comms directory.
+Select: "Dial the executive line."
+
+Three rings. Someone picks up.
+
+"Oh? A wise guy, huh? Look, I'm tracing you right now, pal.
+We'll see how smart you feel with internal security all over
+your fricking ass. Dickhead!
+
+The President of the Global-fucking-Government. Who'd you
+think I was talking about? Who the fu — Who is — What —
+I should kick your fucking ass, who is this?"
+
+The line goes dead.
+
+You sit with that for a moment. Then you go do something useful.</div>
+        </div>
+      </section>
+
+      <!-- CHARACTERS -->
+      <section class="wiki-section" id="u2-characters">
+        <div class="section-header">
+          <span class="section-icon">♥</span>
+          <h2>CHARACTERS</h2>
+        </div>
+
+        <div class="npc-card">
+          <div class="npc-header">
+            <div class="npc-portrait">  ╔══════╗
+  ║ ·  · ║
+  ║  ╌──╌ ║
+  ╚══════╝
+  [trusts you]</div>
+            <div class="npc-meta">
+              <div class="npc-name">MARA</div>
+              <div class="npc-desc">Returns. Above ground now, operating from a signal-jammed fourth-floor flat. Still running on coffee and controlled urgency. If you brought her relationship from U1, she picks up where you left off.</div>
+              <div class="npc-rel-track">
+                <div class="rel-pip mara-0">·</div>
+                <div class="rel-pip mara-1">·</div>
+                <div class="rel-pip mara-2">·</div>
+                <div class="rel-pip mara-3">·</div>
+                <div class="rel-pip mara-4">♥</div>
+                <div class="rel-pip mara-5">♥</div>
+                <span class="rel-label">CONTINUES FROM U1 IF IMPORTED</span>
+              </div>
+            </div>
+          </div>
+          <div class="npc-body">
+            <h3>DIALOGUE OPTIONS BY RELATIONSHIP LEVEL</h3>
+            <ul class="npc-options-list">
+              <li><strong>REL 0</strong> — REVENANT briefing, ask if she's safe (+1), move to the Spire</li>
+              <li><strong>REL 1</strong> — Ask what happens if you fail, ask about herself (+1), "I saw your brother's name" (+1, reveals her brother Kael is in the trial data)</li>
+              <li><strong>REL 3</strong> — "How are you holding up?" (+1), "I'm glad you called me" (+1) <span class="romance">♥ romance</span></li>
+              <li class="romance"><strong>REL 4</strong> — "After this — where do you go?" (+1), "Come with me" (+1) <span class="req">♥ romance</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="npc-card">
+          <div class="npc-header">
+            <div class="npc-portrait">  ╔══════════════╗
+  ║ ▓▓■      ■▓▓ ║
+  ║   ════════   ║
+  ╠══════════════╣
+  ║ ▓▓▓▓▓▓▓▓▓▓▓▓ ║
+  ╚══╣        ╠══╝</div>
+            <div class="npc-meta">
+              <div class="npc-name">NAKAMURA-Ω</div>
+              <div class="npc-desc">Project REVENANT. Rebuilt in sub-basement four. Plating where skin should be, hydraulic assists along the spine, optical augmentation that catches the light wrong. His eyes are the same. That's the worst part.</div>
+            </div>
+          </div>
+          <div class="npc-body">
+            <p><em>"They gave me a directive when I came back online. Terminate the data source. Recover the shard. Return the sector to prior operating conditions."</em></p>
+            <p style="margin-top:8px;">He briefly hesitates when confronted — there's a doubt scene accessible before the fight. It doesn't change the outcome. He comes at you anyway. The confrontation moves from the lab to the roof of the Spire — 40 floors up, in the rain.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ITEMS -->
+      <section class="wiki-section" id="u2-items">
+        <div class="section-header">
+          <span class="section-icon">▣</span>
+          <h2>ITEMS</h2>
+        </div>
+        <table class="wiki-table">
+          <thead><tr><th>ITEM</th><th>TYPE</th><th>EFFECT</th><th>SOURCE</th></tr></thead>
+          <tbody>
+            <tr><td class="name-col">⚔ Utility Knife</td><td><span class="tag tag-weapon">WEAPON</span></td><td>+3 ATK</td><td>U1 import / scavenge</td></tr>
+            <tr><td class="name-col">◆ Combat Blade</td><td><span class="tag tag-weapon">WEAPON</span></td><td>+6 ATK</td><td>Shop ¢90 / scavenge / U1 import</td></tr>
+            <tr><td class="name-col">▲ Spire Blade</td><td><span class="tag tag-weapon">WEAPON</span></td><td>+9 ATK</td><td>Spire — found in-game</td></tr>
+            <tr><td class="name-col">◎ Neural Jack</td><td><span class="tag tag-weapon">WEAPON</span></td><td>+2 ATK permanent</td><td>Scavenge event</td></tr>
+            <tr><td class="name-col">◈ Body Armor</td><td><span class="tag tag-armor">ARMOR</span></td><td>+4 DEF</td><td>Shop ¢80 / U1 import</td></tr>
+            <tr><td class="name-col">▣ Hardplate</td><td><span class="tag tag-armor">ARMOR</span></td><td>+7 DEF</td><td>Shop ¢140</td></tr>
+            <tr><td class="name-col">✚ Medkit</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+25 HP</td><td>Shop ¢40 / scavenge</td></tr>
+            <tr><td class="name-col">◉ Power Cell</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+15 HP</td><td>Shop ¢25 / scavenge / drops</td></tr>
+            <tr><td class="name-col">↑ Combat Stims</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+6 ATK / 3 turns</td><td>Shop ¢55 / scavenge</td></tr>
+            <tr><td class="name-col">▲ Adrenaline</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+4 ATK + 10 HP</td><td>Shop ¢50</td></tr>
+            <tr><td class="name-col">◑ Ghost Chip</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>35% dodge, 2 turns</td><td>Shop ¢70</td></tr>
+            <tr><td class="name-col">◈ Overclock Chip</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+8 ATK 4 turns, -5 HP recoil</td><td>Shop ¢120 / spire elite drop</td></tr>
+            <tr><td class="name-col">♥ Mara's Flask</td><td><span class="tag tag-consumable">CONSUMABLE</span></td><td>+8 HP (From Sector 9)</td><td>U1 import only</td></tr>
+            <tr><td class="name-col">⚡ EMP Scrambler</td><td><span class="tag tag-key">KEY</span></td><td>Stuns augmented</td><td>Story node</td></tr>
+            <tr><td class="name-col">░ Biometric Cloak</td><td><span class="tag tag-key">KEY</span></td><td>Bypass one guard scan</td><td>Market intel node (free)</td></tr>
+            <tr><td class="name-col">◇ Breacher</td><td><span class="tag tag-key">KEY</span></td><td>Opens hardened locks</td><td>Mara spire intel</td></tr>
+            <tr><td class="name-col">☠ Revenant Key</td><td><span class="tag tag-key">KEY</span></td><td>B4 elevator access</td><td>Revenant Guard (combat drop)</td></tr>
+            <tr><td class="name-col">▣ Data Shard</td><td><span class="tag tag-key">KEY</span></td><td>The original — still live</td><td>U1 import</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ENEMIES -->
+      <section class="wiki-section" id="u2-enemies">
+        <div class="section-header">
+          <span class="section-icon">▓</span>
+          <h2>ENEMIES</h2>
+        </div>
+        <table class="wiki-table">
+          <thead><tr><th>ENEMY</th><th>HP</th><th>ATK</th><th>DEF</th><th>XP</th><th>GOLD</th><th>NOTES</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="name-col">Helios Agent</td>
+              <td><span class="stat-badge hp">24</span></td>
+              <td><span class="stat-badge atk">7</span></td>
+              <td><span class="stat-badge def">2</span></td>
+              <td><span class="stat-badge xp">35</span></td>
+              <td><span class="stat-badge gold">¢20</span></td>
+              <td>Street level encounter.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Patrol Drone</td>
+              <td><span class="stat-badge hp">18</span></td>
+              <td><span class="stat-badge atk">9</span></td>
+              <td><span class="stat-badge def">3</span></td>
+              <td><span class="stat-badge xp">30</span></td>
+              <td><span class="stat-badge gold">¢15</span></td>
+              <td><span class="tag tag-aug">AUGMENTED</span> Silent. Stun-vulnerable.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Corp Enforcer</td>
+              <td><span class="stat-badge hp">45</span></td>
+              <td><span class="stat-badge atk">10</span></td>
+              <td><span class="stat-badge def">5</span></td>
+              <td><span class="stat-badge xp">80</span></td>
+              <td><span class="stat-badge gold">¢60</span></td>
+              <td><span class="tag tag-aug">AUGMENTED</span> Lobby distraction fight.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Ghost Operative</td>
+              <td><span class="stat-badge hp">35</span></td>
+              <td><span class="stat-badge atk">13</span></td>
+              <td><span class="stat-badge def">4</span></td>
+              <td><span class="stat-badge xp">90</span></td>
+              <td><span class="stat-badge gold">¢55</span></td>
+              <td>Can bleed. High ATK.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Spire Elite</td>
+              <td><span class="stat-badge hp">50</span></td>
+              <td><span class="stat-badge atk">11</span></td>
+              <td><span class="stat-badge def">7</span></td>
+              <td><span class="stat-badge xp">95</span></td>
+              <td><span class="stat-badge gold">¢70</span></td>
+              <td>Server floor — optional fight. Drops Overclock Chip.</td>
+            </tr>
+            <tr>
+              <td class="name-col">Revenant Guard</td>
+              <td><span class="stat-badge hp">55</span></td>
+              <td><span class="stat-badge atk">12</span></td>
+              <td><span class="stat-badge def">6</span></td>
+              <td><span class="stat-badge xp">100</span></td>
+              <td><span class="stat-badge gold">¢80</span></td>
+              <td><span class="tag tag-aug">AUGMENTED</span> B4 elevator. Drops Revenant Key.</td>
+            </tr>
+            <tr>
+              <td class="name-col">NAKAMURA-Ω <span class="tag tag-boss">FINAL BOSS</span></td>
+              <td><span class="stat-badge hp">120</span></td>
+              <td><span class="stat-badge atk">18</span></td>
+              <td><span class="stat-badge def">8</span></td>
+              <td><span class="stat-badge xp">500</span></td>
+              <td><span class="stat-badge gold">¢300</span></td>
+              <td><span class="tag tag-aug">AUGMENTED</span> Cannot bleed. Rage at 60 HP (ATK ×1.35). Roof — mandatory.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SHOP -->
+      <section class="wiki-section" id="u2-shop">
+        <div class="section-header">
+          <span class="section-icon">¢</span>
+          <h2>SHOP</h2>
+        </div>
+        <p class="dim">District 4's black market, three floors of a condemned residential block. Access via the market_district node.</p>
+        <table class="wiki-table">
+          <thead><tr><th>ITEM</th><th>PRICE</th><th>EFFECT</th></tr></thead>
+          <tbody>
+            <tr><td class="name-col">◉ Power Cell</td><td>¢25</td><td>+15 HP</td></tr>
+            <tr><td class="name-col">✚ Medkit</td><td>¢40</td><td>+25 HP</td></tr>
+            <tr><td class="name-col">▲ Adrenaline</td><td>¢50</td><td>+4 ATK + 10 HP</td></tr>
+            <tr><td class="name-col">↑ Combat Stims</td><td>¢55</td><td>+6 ATK / 3 turns</td></tr>
+            <tr><td class="name-col">◑ Ghost Chip</td><td>¢70</td><td>35% dodge, 2 turns</td></tr>
+            <tr><td class="name-col">◈ Body Armor</td><td>¢80</td><td>+4 DEF</td></tr>
+            <tr><td class="name-col">◆ Combat Blade</td><td>¢90</td><td>+6 ATK</td></tr>
+            <tr><td class="name-col">◈ Overclock Chip</td><td>¢120</td><td>+8 ATK 4 turns, -5 HP recoil</td></tr>
+            <tr><td class="name-col">▣ Hardplate</td><td>¢140</td><td>+7 DEF</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ENDINGS -->
+      <section class="wiki-section" id="u2-endings">
+        <div class="section-header">
+          <span class="section-icon">◎</span>
+          <h2>ENDINGS</h2>
+        </div>
+        <h3>STANDARD ENDING</h3>
+        <p>Defeat NAKAMURA-Ω on the roof. Forty floors up, rain, the sector below. The data is still transmitting. Somewhere a lawyer is making a call. It's not enough. But it's something.</p>
+        <h3>MARA — CONTACT ENDING (REL ≥ 2)</h3>
+        <p>A terminal message: the data is holding, forty-two feeds. <em>"Thank you for coming back."</em> Brief. Real.</p>
+        <h3>MARA — COME WITH ME ENDING (REL ≥ 4 + <code>come_with</code> flag)</h3>
+        <p>The fullest ending. Mara is at the extraction point with the coffee press. <em>"Come find me."</em> The journalist network has a safe location above ground with morning light. For both of you.</p>
+        <div class="tips-box">
+          <div class="tips-title">// ENDING REQUIREMENTS</div>
+          <ul class="tips-list">
+            <li>The "Come with me" ending requires REL 4 and the <code>come_with</code> flag. The flag is set by choosing "Come with me" in the REL 4 dialogue.</li>
+            <li>A U1 import with REL ≥ 3 carries the relationship forward — you'll reach REL 4 via one or two U2 dialogues rather than building from scratch.</li>
+            <li>The "veteran" line appears in all endings for U1 imports: <em>"legacy operative record updated."</em></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- TIPS -->
+      <section class="wiki-section" id="u2-tips">
+        <div class="section-header">
+          <span class="section-icon">↑</span>
+          <h2>TIPS & STRATEGY</h2>
+        </div>
+        <div class="tips-box">
+          <div class="tips-title">// RECOMMENDED PATH</div>
+          <ul class="tips-list">
+            <li>Go to the market district before Mara — the intel node gives you the Biometric Cloak for free, which lets you bypass Spire lobby security entirely.</li>
+            <li>On the server floor (optional), fight the Spire Elite for the Overclock Chip — it's an exceptional consumable for the NAKAMURA-Ω fight.</li>
+            <li>Take the legacy terminal detour in B2 — it has no cost and unlocks the easter egg. The Revenant Guard fight is mandatory anyway.</li>
+          </ul>
+        </div>
+        <div class="tips-box warn">
+          <div class="tips-title">// NAKAMURA-Ω PREPARATION</div>
+          <ul class="tips-list">
+            <li>Target stats going into the Spire: HP 55+, DEF 6+ (Hardplate strongly recommended at ¢140). The boss hits for 18 ATK base.</li>
+            <li>Stock: Overclock Chip + at least 2 medkits. Pop the Overclock Chip at round 1 — the +8 ATK for 4 turns dramatically shortens a fight where you do not want to overstay.</li>
+            <li>At 60 HP his ATK goes to ~24. This is when to use the Ghost Chip if you have one.</li>
+            <li>EMP Scrambler stuns him for one turn — use it in rage phase to buy time.</li>
+          </ul>
+        </div>
+        <div class="tips-box info">
+          <div class="tips-title">// U1 IMPORT STRATEGY</div>
+          <ul class="tips-list">
+            <li>A level 7 U1 veteran starts with HP 70, ATK 10, DEF 4 — substantial. The Spire Elite and Revenant Guard become manageable fights rather than threatening ones.</li>
+            <li>Carry Mara's Flask from U1 — it heals 8 HP in U2, a modest but reliable consumable in early game before you stock up.</li>
+            <li>The imported Data Shard is cosmetic in U2 (key item, no mechanical use) but carries narrative weight.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- CHANGELOG -->
+      <section class="wiki-section" id="u2-changelog">
+        <div class="section-header">
+          <span class="section-icon">◇</span>
+          <h2>CHANGELOG</h2>
+        </div>
+        <div class="patch-block">
+          <div class="patch-ver">v1.0.1 <span class="current">current</span></div>
+          <div class="patch-entry"><span class="fix">FIX</span> EmuSoft badge and patch notes now correctly hide in-game (animation was overriding opacity)</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Import U1 Save button centred on its own row below main title buttons</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Title screen order: UNDERPASS → Sequence 2: Continuation Protocol → // Sector 9 Terminal //</div>
+          <div class="patch-entry"><span class="fix">FIX</span> Mara's Flask desc updated to "From Sector 9. +8 HP." — acknowledges U1 origin rather than generic flavour text</div>
+        </div>
+        <div class="patch-block">
+          <div class="patch-ver">v1.0.0</div>
+          <div class="patch-entry"><span class="new">NEW</span> Underpass 2 — full sequel, picks up after Sector 9 extraction</div>
+          <div class="patch-entry"><span class="new">NEW</span> Import save from Underpass 1 — name, level, stats, gold, Mara relationship carry over</div>
+          <div class="patch-entry"><span class="new">NEW</span> Mara returns as primary contact and potential companion</div>
+          <div class="patch-entry"><span class="new">NEW</span> NAKAMURA-Ω — resurrected as cybernetic apex predator, Project REVENANT</div>
+          <div class="patch-entry"><span class="new">NEW</span> 25 story nodes across 4 acts</div>
+          <div class="patch-entry"><span class="story">STORY</span> Legacy terminal easter egg in Spire sub-basement 2</div>
+        </div>
+      </section>
+
+    </div><!-- end panel-u2 -->
+
+  </main>
+</div>
+
+<script>
+function switchGame(game){
+  document.querySelectorAll('.game-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.game-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+game).classList.add('active');
+  event.currentTarget.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Sidebar active state on scroll
+const sections = document.querySelectorAll('.wiki-section');
+const links = document.querySelectorAll('.sb-link');
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(l=>l.classList.remove('active'));
+      const link = document.querySelector('.sb-link[href="#'+e.target.id+'"]');
+      if(link) link.classList.add('active');
+    }
+  });
+},{threshold:0.3,rootMargin:'-80px 0px -60% 0px'});
+sections.forEach(s=>observer.observe(s));
+</script>
+</body>
+</html>

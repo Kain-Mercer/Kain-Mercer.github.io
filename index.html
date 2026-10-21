@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kain Mercer · Games</title>
+<meta name="description" content="Browser games by Kain Mercer: Underpass, Across Country: Australia and Across Cosmos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151923; --line:#262c3a; --ink:#e8e6df; --dim:#8a8f9c;
+    --neon:#36f1cd; --red:#ff4d6d; --ochre:#e8a33d; --violet:#9b8cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font-family:'VT323',ui-monospace,monospace;font-size:22px;line-height:1.35;
+    background-image:radial-gradient(circle at 50% -20%,#1d2433 0,transparent 60%);
+    min-height:100vh}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+  .wrap{max-width:900px;margin:0 auto;padding:56px 16px 40px}
+  header{text-align:center;margin-bottom:44px}
+  h1{font-family:'Press Start 2P',monospace;font-size:clamp(18px,4vw,30px);letter-spacing:2px;margin:0 0 14px;
+    text-shadow:3px 3px 0 #000}
+  .sub{color:var(--dim);margin:0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:22px}
+  .card{background:var(--panel);border:2px solid var(--line);box-shadow:6px 6px 0 #000;
+    display:flex;flex-direction:column;transition:transform .12s,border-color .12s}
+  .card:hover{transform:translate(-2px,-2px);border-color:var(--accent)}
+  .art{height:150px;display:flex;align-items:center;justify-content:center;border-bottom:2px solid var(--line);
+    background:var(--artbg);image-rendering:pixelated;overflow:hidden}
+  .art pre{margin:0;font-family:'DejaVu Sans Mono',Menlo,Consolas,monospace;font-size:14px;line-height:1.1;color:var(--accent);text-shadow:0 0 6px var(--accent)}
+  .body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .tag{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--accent);letter-spacing:1px}
+  h2{font-family:'Press Start 2P',monospace;font-size:14px;line-height:1.5;margin:0}
+  .body p{margin:0;color:#c9c7c0}
+  .ver{color:var(--dim);font-size:18px}
+  .actions{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;padding-top:8px}
+  a.btn{font-family:'Press Start 2P',monospace;font-size:10px;text-decoration:none;color:#0d0f14;
+    background:var(--accent);padding:12px 14px;box-shadow:3px 3px 0 #000;display:inline-block}
+  a.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+  a.btn.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent);padding:10px 12px}
+  a.btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+  .u{--accent:var(--red);--artbg:linear-gradient(#0b0d12,#1a0f16)}
+  .u2{--accent:var(--violet);--artbg:linear-gradient(#0b0d12,#141028)}
+  .ac{--accent:var(--ochre);--artbg:linear-gradient(#f3b35a 0,#c8632f 55%,#6d2f1d 100%)}
+  .van{font-size:72px;filter:drop-shadow(4px 4px 0 rgba(0,0,0,.35));transform:scaleX(-1)}
+  .cos{--accent:var(--neon);--artbg:radial-gradient(circle at 70% 40%,#16314a 0,#05070c 70%)}
+  footer{text-align:center;color:var(--dim);margin-top:48px;font-size:18px}
+  @media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>KAIN MERCER · GAMES</h1>
+    <p class="sub">Small games that run in your browser. Pick one and play. Nothing to install.</p>
+  </header>
+
+  <main class="grid">
+    <article class="card u">
+      <div class="art"><pre>  ▐█▌ ▐██▌  ▐█▌  ████
+  ███ ████  ███  ████
+ ─────────────────────
+   ░░ SECTOR 9 ░░</pre></div>
+      <div class="body">
+        <span class="tag">CYBERPUNK RPG</span>
+        <h2>UNDERPASS</h2>
+        <p>Wake under the Highway 9 overpass with no memory. Pick a class, get the Helios data shard out of Sector 9, and take on Nakamura on the bridge.</p>
+        <span class="ver">v7.1.0 · pixel engine · turn-based combat</span>
+        <div class="actions">
+          <a class="btn" href="underpass/">▶ PLAY</a>
+          <a class="btn ghost" href="underpass-wiki/">WIKI</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="card u2">
+      <div class="art"><pre>// SEQUENCE 2 //
+ CONTINUATION
+   PROTOCOL</pre></div>
+      <div class="body">
+        <span class="tag">CYBERPUNK RPG · SEQUEL</span>
+        <h2>UNDERPASS 2</h2>
+        <p>Continuation Protocol. Bring your Underpass operative across, find Mara again, and face what Helios made of Nakamura.</p>
+        <span class="ver">v1.0.1 · imports Underpass saves</span>
+        <div class="actions">
+          <a class="btn" href="underpass-2/">▶ PLAY</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="card ac">
+      <div class="art"><div class="van">🚐</div></div>
+      <div class="body">
+        <span class="tag">COSY ROAD TRIP</span>
+        <h2>ACROSS COUNTRY: AUSTRALIA</h2>
+        <p>One delivery from Dampier to Mallacoota. Fit out your rig, chase good sleep, explore every stop, and maybe pick up a dog or a cat on the way.</p>
+        <span class="ver">build 6 · 60 stops · 4 rigs</span>
+        <div class="actions">
+          <a class="btn" href="across-country-australia/">▶ PLAY</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="card cos">
+      <div class="art"><pre>  ·   ✦      ·    ·
+     ·   ═══▶   ·
+  ✦     ·    ·   ◯
+   ·       ·   ✦</pre></div>
+      <div class="body">
+        <span class="tag">SPACE VOYAGE</span>
+        <h2>ACROSS COSMOS: ALPHA CENTAURI</h2>
+        <p>Command the IASF-01 New Dawn across 4.37 light years. Keep the crew steady, trade and upgrade the ship, and fight only when you go looking for trouble.</p>
+        <span class="ver">build 0.7 · trading &amp; upgrade economy</span>
+        <div class="actions">
+          <a class="btn" href="across-cosmos/">▶ PLAY</a>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer>© Kain Mercer · EmuSoft. Progress saves in your browser.</footer>
+</div>
+</body>
+</html>
