@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="nojs">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,23 +8,72 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/room-dark.png">
+<link rel="preload" as="image" href="assets/room-lit.png">
+<script>document.documentElement.className='js';</script>
 <style>
   :root{
     --bg:#0d0f14; --panel:#151923; --line:#262c3a; --ink:#e8e6df; --dim:#8a8f9c;
-    --neon:#36f1cd; --red:#ff4d6d; --ochre:#e8a33d; --violet:#9b8cff;
+    --neon:#36f1cd; --red:#ff4d6d; --ochre:#e8a33d; --violet:#9b8cff; --cyan:#6ef0ff;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--ink)}
-  body{font-family:'VT323',ui-monospace,monospace;font-size:22px;line-height:1.35;
-    background-image:radial-gradient(circle at 50% -20%,#1d2433 0,transparent 60%);
-    min-height:100vh}
-  body::after{content:"";position:fixed;inset:0;pointer-events:none;
-    background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
-  .wrap{max-width:900px;margin:0 auto;padding:56px 16px 40px}
-  header{text-align:center;margin-bottom:44px}
-  h1{font-family:'Press Start 2P',monospace;font-size:clamp(18px,4vw,30px);letter-spacing:2px;margin:0 0 14px;
-    text-shadow:3px 3px 0 #000}
-  .sub{color:var(--dim);margin:0}
+  html,body{margin:0;background:#000;color:var(--ink)}
+  body{font-family:'VT323',ui-monospace,monospace;font-size:22px;line-height:1.35}
+  .skip{position:absolute;left:-9999px;top:8px;z-index:50;font-family:'Press Start 2P',monospace;font-size:10px;
+    background:var(--cyan);color:#000;padding:10px 12px}
+  .skip:focus{left:8px}
+
+  /* ---------- the room ---------- */
+  .room{position:relative;height:100vh;height:100svh;overflow:hidden;background:#000}
+  .stage{position:absolute;left:50%;top:50%;width:384px;height:216px;
+    transform:translate(-50%,-50%) scale(var(--s,4)) translate(0,var(--oy,0px));
+    transform-origin:50% 50%;image-rendering:pixelated}
+  .stage.zoom{transition:transform 1s cubic-bezier(.6,0,.85,.4)}
+  .stage.unzoom{transition:transform .7s cubic-bezier(.2,.7,.3,1)}
+  .layer{position:absolute;inset:0;width:384px;height:216px;image-rendering:pixelated;display:block}
+  .js .dark,.js .lit,.js #fx{opacity:0}
+  .js .on .dark,.js .on #fx{opacity:1}
+  .js .on .lit{opacity:var(--lamp,1)}
+  .cab{position:absolute;left:154px;top:48px;width:68px;height:114px;padding:0;margin:0;border:0;
+    background:transparent;cursor:pointer;border-radius:1px}
+  .cab:focus-visible{outline:1px solid var(--cyan);outline-offset:1px}
+  .hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
+    align-items:center;padding:28px 16px 30px;text-align:center;opacity:0;transition:opacity 1.2s}
+  .nojs .hud,.ready .hud{opacity:1}
+  .room.ready.zooming .hud{opacity:0;transition:opacity .25s}
+  .hud h1{font-family:'Press Start 2P',monospace;font-size:clamp(14px,3vw,24px);letter-spacing:2px;margin:0 0 10px;
+    color:#f2efe6;text-shadow:3px 3px 0 #000,0 0 18px rgba(110,240,255,.35)}
+  .hud .sub{color:#a9adb8;margin:0;text-shadow:2px 2px 0 #000}
+  .hud .go{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .press{font-family:'Press Start 2P',monospace;font-size:12px;letter-spacing:1px;color:#000;background:var(--cyan);
+    border:0;padding:13px 16px;box-shadow:3px 3px 0 #000,0 0 22px rgba(110,240,255,.5);cursor:pointer;animation:blink 1.1s steps(1) infinite}
+  .press:hover,.press:focus-visible{animation:none;outline:2px solid #fff;outline-offset:3px}
+  .hint{color:#8c93a3;font-size:18px;text-shadow:2px 2px 0 #000}
+  .hint a{color:#c9ccd4}
+  @keyframes blink{50%{opacity:.35}}
+  .flash{position:fixed;inset:0;background:#dffcff;opacity:0;pointer-events:none;z-index:30}
+  .flash.go{animation:flash .45s ease-out}
+  @keyframes flash{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
+
+  /* ---------- the cabinet screen (game select) ---------- */
+  .crt{position:relative;background:radial-gradient(ellipse at 50% 40%,#0b1f2b 0,#03080d 75%);min-height:100vh}
+  .js .crt{position:fixed;inset:0;z-index:20;overflow-y:auto;visibility:hidden;opacity:0}
+  .js.menu-open .crt{visibility:visible;opacity:1;animation:poweron .5s ease-out}
+  @keyframes poweron{0%{transform:scale(1,.004);filter:brightness(4)}45%{transform:scale(1,.004);filter:brightness(4)}
+    70%{transform:scale(1,1);filter:brightness(2)}100%{transform:none;filter:none}}
+  .crt::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
+  .crt::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;
+    box-shadow:inset 0 0 120px 30px rgba(0,0,0,.85);border-radius:18px}
+  .wrap{position:relative;max-width:900px;margin:0 auto;padding:64px 16px 40px}
+  .back{position:absolute;left:16px;top:16px;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan);
+    background:transparent;border:2px solid var(--cyan);padding:9px 11px;cursor:pointer;z-index:4}
+  .nojs .back{display:none}
+  .back:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  .crt header{text-align:center;margin-bottom:40px}
+  .crt h2.title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3.6vw,26px);letter-spacing:3px;margin:0 0 14px;
+    color:var(--cyan);text-shadow:0 0 10px rgba(110,240,255,.7),3px 3px 0 #000}
+  .crt .sub{color:#7fa8b4;margin:0}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:22px}
   .card{background:var(--panel);border:2px solid var(--line);box-shadow:6px 6px 0 #000;
     display:flex;flex-direction:column;transition:transform .12s,border-color .12s}
@@ -34,7 +83,7 @@
   .art pre{margin:0;font-family:'DejaVu Sans Mono',Menlo,Consolas,monospace;font-size:14px;line-height:1.1;color:var(--accent);text-shadow:0 0 6px var(--accent)}
   .body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
   .tag{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--accent);letter-spacing:1px}
-  h2{font-family:'Press Start 2P',monospace;font-size:14px;line-height:1.5;margin:0}
+  .card h2{font-family:'Press Start 2P',monospace;font-size:14px;line-height:1.5;margin:0}
   .body p{margin:0;color:#c9c7c0}
   .ver{color:var(--dim);font-size:18px}
   .actions{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;padding-top:8px}
@@ -56,15 +105,44 @@
     border:4px solid #ff2a3d;padding:14px 18px;background:rgba(13,15,20,.82);transform:rotate(-8deg);
     letter-spacing:2px;text-shadow:3px 3px 0 #000;box-shadow:4px 4px 0 #000}
   span.btn{font-family:'Press Start 2P',monospace;font-size:10px;color:#0d0f14;background:var(--accent);padding:12px 14px;box-shadow:3px 3px 0 #000;display:inline-block}
-  footer{text-align:center;color:var(--dim);margin-top:48px;font-size:18px}
-  @media (prefers-reduced-motion:reduce){.card{transition:none}}
+  footer{text-align:center;color:#6f8790;margin-top:48px;font-size:18px}
+  @media (prefers-reduced-motion:reduce){
+    .card,.stage.zoom,.stage.unzoom,.hud{transition:none}
+    .press{animation:none}
+    .js.menu-open .crt{animation:none}
+    .flash.go{animation:none}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
+<a class="skip" href="#games">Skip to the games</a>
+
+<div class="room" id="room">
+  <div class="stage" id="stage">
+    <img class="layer dark" src="assets/room-dark.png" alt="" width="384" height="216">
+    <img class="layer lit" src="assets/room-lit.png" alt="A dark back room full of 90s junk and plastic sheeting. One arcade cabinet still glows at the far wall." width="384" height="216">
+    <canvas class="layer" id="fx" width="384" height="216" aria-hidden="true"></canvas>
+    <button class="cab" id="cab" type="button" aria-label="Play the arcade cabinet: choose a game"></button>
+  </div>
+  <div class="hud">
+    <div>
+      <h1>KAIN MERCER · GAMES</h1>
+      <p class="sub">Small games that run in your browser. Nothing to install.</p>
+    </div>
+    <div class="go">
+      <button class="press" id="press" type="button">▶ PRESS START</button>
+      <span class="hint">or click the cabinet · <a href="#games" id="list">just show me the list</a></span>
+    </div>
+  </div>
+</div>
+<div class="flash" id="flash"></div>
+
+<section class="crt" id="games" aria-label="Game select">
+  <button class="back" id="back" type="button">◀ BACK</button>
+  <div class="wrap">
   <header>
-    <h1>KAIN MERCER · GAMES</h1>
-    <p class="sub">Small games that run in your browser. Pick one and play. Nothing to install.</p>
+    <h2 class="title">SELECT GAME</h2>
+    <p class="sub">Pick one and play. Progress saves in your browser.</p>
   </header>
 
   <main class="grid">
@@ -135,6 +213,188 @@
   </main>
 
   <footer>© Kain Mercer · EmuSoft. Progress saves in your browser.</footer>
-</div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var W = 384, H = 216;
+  var SCR = {x:176, y:77, w:32, h:26};               // cabinet screen, in art pixels
+  var root = document.documentElement, room = document.getElementById('room');
+  var stage = document.getElementById('stage'), fx = document.getElementById('fx'), g = fx.getContext('2d');
+  var crt = document.getElementById('games'), flash = document.getElementById('flash');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var seen = false;
+  try { seen = sessionStorage.getItem('arcade-seen') === '1'; } catch (e) {}
+
+  // scale the 384x216 room to cover the viewport
+  var cover = 4;
+  function fit(){
+    cover = Math.max(room.clientWidth / W, room.clientHeight / H);
+    if (!root.classList.contains('menu-open')) stage.style.setProperty('--s', cover);
+  }
+  addEventListener('resize', fit); fit();
+
+  // 3x5 pixel font, same glyphs as the baked art
+  var F = {A:'010101111101101',E:'111100110100111',P:'110101110100100',R:'110101110101101',
+    S:'011100010001110',T:'111010010010010',' ':'000000000000000'};
+  function text(s, x, y, col){
+    g.fillStyle = col;
+    for (var i = 0; i < s.length; i++) {
+      var b = F[s[i]] || F[' '];
+      for (var j = 0; j < 15; j++) if (b[j] === '1') g.fillRect(x + i * 4 + j % 3, y + (j / 3 | 0), 1, 1);
+    }
+  }
+
+  // attract mode: two light cycles race on the cabinet screen
+  var bikes, occ, crash = 0;
+  function reset(){
+    occ = new Uint8Array(SCR.w * SCR.h);
+    bikes = [{x:3, y:SCR.h - 4, dx:1, dy:0, c:'#6ef0ff', t:'#1aa6d6'},
+             {x:SCR.w - 4, y:3, dx:-1, dy:0, c:'#ffb040', t:'#c8641a'}];
+    bikes.forEach(function(b){ occ[b.y * SCR.w + b.x] = 1; b.trail = [[b.x, b.y]]; });
+  }
+  function free(x, y){ return x >= 0 && y >= 0 && x < SCR.w && y < SCR.h && !occ[y * SCR.w + x]; }
+  function step(){
+    if (crash) { if (--crash === 0) reset(); return; }
+    bikes.forEach(function(b){
+      if (crash) return;
+      var turns = [[b.dy, -b.dx], [-b.dy, b.dx]];
+      if (Math.random() < 0.08 || !free(b.x + b.dx, b.y + b.dy)) {
+        if (Math.random() < 0.5) turns.reverse();
+        for (var i = 0; i < 2; i++) if (free(b.x + turns[i][0], b.y + turns[i][1])) { b.dx = turns[i][0]; b.dy = turns[i][1]; break; }
+      }
+      if (!free(b.x + b.dx, b.y + b.dy)) { crash = 24; b.dead = true; return; }
+      b.x += b.dx; b.y += b.dy; occ[b.y * SCR.w + b.x] = 1; b.trail.push([b.x, b.y]);
+    });
+  }
+  function drawScreen(t){
+    g.fillStyle = '#04101a'; g.fillRect(SCR.x, SCR.y, SCR.w, SCR.h);
+    g.fillStyle = '#0a2a3c';
+    var off = (t / 120 | 0) % 4;
+    for (var x = SCR.x + off; x < SCR.x + SCR.w; x += 4) g.fillRect(x, SCR.y, 1, SCR.h);
+    for (var y = SCR.y + 1; y < SCR.y + SCR.h; y += 4) g.fillRect(SCR.x, y, SCR.w, 1);
+    bikes.forEach(function(b){
+      g.fillStyle = b.t;
+      b.trail.forEach(function(p){ g.fillRect(SCR.x + p[0], SCR.y + p[1], 1, 1); });
+      g.fillStyle = (b.dead && crash % 4 < 2) ? '#ffffff' : b.c;
+      g.fillRect(SCR.x + b.x, SCR.y + b.y, 1, 1);
+    });
+    if ((t / 600 | 0) % 2 === 0) {
+      g.fillStyle = 'rgba(2,8,14,.8)'; g.fillRect(SCR.x + 5, SCR.y + 7, 21, 13);
+      text('PRESS', SCR.x + 6, SCR.y + 8, '#c8faff');
+      text('START', SCR.x + 6, SCR.y + 14, '#c8faff');
+    }
+  }
+
+  // dust drifting through the light
+  var motes = [];
+  for (var i = 0; i < 46; i++) motes.push({x:Math.random() * W, y:Math.random() * H, v:0.02 + Math.random() * 0.05, p:Math.random() * 6.28});
+  function drawDust(t){
+    motes.forEach(function(m){
+      m.y += m.v; m.x += Math.sin(t / 1800 + m.p) * 0.05;
+      if (m.y > H) { m.y = 20; m.x = Math.random() * W; }
+      var d = Math.min(Math.hypot(m.x - 192, (m.y - 95) * 1.3) / 70,
+                       Math.hypot(m.x - 26, m.y - 14) / 60, Math.hypot(m.x - 358, m.y - 16) / 60);
+      if (!room.classList.contains('ready')) d = Math.hypot(m.x - 192, (m.y - 95) * 1.3) / 70;
+      var a = Math.max(0, 0.55 - d * 0.5) * (0.6 + 0.4 * Math.sin(t / 700 + m.p));
+      if (a > 0.03) { g.fillStyle = 'rgba(220,235,240,' + a.toFixed(2) + ')'; g.fillRect(m.x | 0, m.y | 0, 1, 1); }
+    });
+  }
+
+  // the bare bulbs buzz now and then
+  var buzz = 0;
+  function bulbs(){
+    var lamp = 1;
+    if (buzz > 0) { buzz--; lamp = Math.random() < 0.5 ? 0.55 : 1; }
+    else if (Math.random() < 0.004) buzz = 6 + (Math.random() * 10 | 0);
+    stage.style.setProperty('--lamp', lamp);
+  }
+
+  reset();
+  var last = 0, acc = 0, running = true;
+  function frame(t){
+    if (!running) return;
+    acc += Math.min(100, t - last); last = t;
+    while (acc > 70) { step(); acc -= 70; }
+    g.clearRect(0, 0, W, H);
+    drawDust(t);
+    drawScreen(t);
+    if (!reduce && room.classList.contains('ready')) bulbs();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(function(t){ last = t; frame(t); });
+
+  // the reveal: the cabinet flickers on first, then the bulbs
+  function finish(){
+    stage.classList.add('on'); room.classList.add('ready');
+    try { sessionStorage.setItem('arcade-seen', '1'); } catch (e) {}
+  }
+  if (seen || reduce) finish();
+  else {
+    var timers = [];
+    var darkEl = stage.querySelector('.dark'), litEl = stage.querySelector('.lit');
+    var seq = [[500,'dark',1],[580,'dark',0],[700,'dark',1],[760,'dark',0],[1000,'dark',1],
+               [1900,'lit',.6],[1960,'lit',0],[2150,'lit',1],[2230,'lit',.2],[2400,'lit',1]];
+    var clear = function(){ darkEl.style.opacity = litEl.style.opacity = fx.style.opacity = ''; finish(); };
+    seq.forEach(function(s){
+      timers.push(setTimeout(function(){
+        (s[1] === 'dark' ? darkEl : litEl).style.opacity = s[2];
+        if (s[1] === 'dark') fx.style.opacity = s[2];
+      }, s[0]));
+    });
+    timers.push(setTimeout(function(){ clear(); unhook(); }, 2700));
+    var skip = function(e){
+      timers.forEach(clearTimeout); clear(); unhook();
+      if (e && e.type === 'keydown') e.stopImmediatePropagation();
+    };
+    var unhook = function(){ removeEventListener('keydown', skip); room.removeEventListener('pointerdown', skip); };
+    addEventListener('keydown', skip); room.addEventListener('pointerdown', skip);
+  }
+
+  // walk up to the cabinet: zoom into its screen, then the game select powers on
+  var busy = false, opener = null;
+  var oy = (H / 2 - (SCR.y + SCR.h / 2)) + 'px';
+  function open(instant){
+    if (busy || root.classList.contains('menu-open')) return;
+    opener = document.activeElement;
+    finish();
+    var k = Math.max(room.clientWidth / SCR.w, room.clientHeight / SCR.h) * 1.05;
+    var done = function(){
+      root.classList.add('menu-open'); room.classList.remove('zooming'); running = false; busy = false;
+      if (!instant && !reduce) { flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
+      crt.scrollTop = 0;
+      document.getElementById('back').focus({preventScroll:true});
+      if (location.hash !== '#games') history.replaceState(null, '', '#games');
+    };
+    stage.classList.remove('unzoom');
+    if (!instant && !reduce) { stage.classList.add('zoom'); room.classList.add('zooming'); }
+    stage.style.setProperty('--s', k); stage.style.setProperty('--oy', oy);
+    if (instant || reduce) return done();
+    busy = true; setTimeout(done, 950);
+  }
+  function close(){
+    if (!root.classList.contains('menu-open')) return;
+    root.classList.remove('menu-open');
+    running = true; requestAnimationFrame(function(t){ last = t; frame(t); });
+    stage.classList.remove('zoom'); if (!reduce) stage.classList.add('unzoom');
+    stage.style.setProperty('--s', cover); stage.style.setProperty('--oy', '0px');
+    history.replaceState(null, '', location.pathname + location.search);
+    var to = opener && opener !== document.body && opener.focus ? opener : document.getElementById('press');
+    to.focus({preventScroll:true});
+  }
+  document.getElementById('cab').addEventListener('click', function(){ open(false); });
+  document.getElementById('press').addEventListener('click', function(){ open(false); });
+  document.getElementById('list').addEventListener('click', function(e){ e.preventDefault(); open(true); });
+  document.querySelector('.skip').addEventListener('click', function(e){ e.preventDefault(); open(true); });
+  document.getElementById('back').addEventListener('click', close);
+  addEventListener('keydown', function(e){
+    if (e.key === 'Escape') close();
+    else if ((e.key === 'Enter' || e.key === ' ') && !root.classList.contains('menu-open')
+             && (document.activeElement === document.body || !document.activeElement)) { e.preventDefault(); open(false); }
+  });
+  if (location.hash === '#games') open(true);
+})();
+</script>
 </body>
 </html>
