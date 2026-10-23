@@ -22,8 +22,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/room-dark.png?v=7">
-<link rel="preload" as="image" href="assets/room-lit.png?v=7">
+<link rel="preload" as="image" href="assets/room-dark.png?v=8">
+<link rel="preload" as="image" href="assets/room-lit.png?v=8">
 <script>document.documentElement.className='js';</script>
 <style>
   :root{
@@ -57,9 +57,6 @@
   .room.ready.zooming .hud{opacity:0;transition:opacity .25s}
   .hud h1{font-family:'Press Start 2P',monospace;font-size:clamp(14px,3vw,24px);letter-spacing:2px;margin:0;
     color:#f2efe6;text-shadow:3px 3px 0 #000,0 0 18px rgba(110,240,255,.35)}
-  .hud .go{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:12px}
-  .hint{color:#8c93a3;font-size:18px;text-shadow:2px 2px 0 #000}
-  .hint a{color:#c9ccd4}
   @keyframes blink{50%{opacity:.35}}
   .flash{position:fixed;inset:0;background:#dffcff;opacity:0;pointer-events:none;z-index:30}
   .flash.go{animation:flash .45s ease-out}
@@ -235,8 +232,8 @@
 
 <div class="room" id="room">
   <div class="stage" id="stage">
-    <img class="layer dark" src="assets/room-dark.png?v=7" alt="" width="384" height="216">
-    <img class="layer lit" src="assets/room-lit.png?v=7" alt="A dark back room full of 90s junk and plastic sheeting. One arcade cabinet still glows at the far wall." width="384" height="216">
+    <img class="layer dark" src="assets/room-dark.png?v=8" alt="" width="384" height="216">
+    <img class="layer lit" src="assets/room-lit.png?v=8" alt="A dark back room full of 90s junk and plastic sheeting. One arcade cabinet still glows at the far wall." width="384" height="216">
     <canvas class="layer" id="items" width="384" height="216" aria-hidden="true"></canvas>
     <canvas class="layer" id="fx" width="384" height="216" aria-hidden="true"></canvas>
     <button class="cab" id="cab" type="button" aria-label="Play the arcade cabinet: choose a game"></button>
@@ -247,9 +244,6 @@
   <div class="hud">
     <div>
       <h1>EMUSOFT</h1>
-    </div>
-    <div class="go">
-      <span class="hint"><a href="#games" id="list">just show me the list</a><span id="deco-link" hidden> · <a href="#room" id="deco-open">decorate the room</a></span></span>
     </div>
   </div>
 </div>
@@ -529,7 +523,6 @@
     to.focus({preventScroll:true});
   }
   document.getElementById('cab').addEventListener('click', function(){ open(false); });
-  document.getElementById('list').addEventListener('click', function(e){ e.preventDefault(); open(true); });
   document.querySelector('.skip').addEventListener('click', function(e){ e.preventDefault(); open(true); });
   document.getElementById('back').addEventListener('click', close);
   addEventListener('keydown', function(e){
@@ -643,7 +636,6 @@
     var hasAny = Object.keys(data.items).length > 0;
     crateBtn.hidden = !(hasAny && !data.found);
     toolBtn.hidden = !data.found;
-    document.getElementById('deco-link').hidden = !data.found;
   }
   refreshRoom();
 
@@ -659,7 +651,6 @@
   }
   crateBtn.addEventListener('click', discover);
   toolBtn.addEventListener('click', openDeco);
-  document.getElementById('deco-open').addEventListener('click', function(e){ e.preventDefault(); openDeco(); });
   var calHits = [];
   document.getElementById('cal').addEventListener('click', function(e){
     e.stopPropagation();
