@@ -70,59 +70,104 @@
   @keyframes flash{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
 
   /* ---------- the cabinet screen (game select) ---------- */
-  .crt{position:relative;background:radial-gradient(ellipse at 50% 40%,#0b1f2b 0,#03080d 75%);min-height:100vh}
-  .js .crt{position:fixed;inset:0;z-index:20;overflow-y:auto;visibility:hidden;opacity:0}
+  .crt{--cy:#28c3ff;position:relative;background:#06080d;min-height:100vh;padding:14px}
+  .js .crt{position:fixed;inset:0;z-index:20;visibility:hidden;opacity:0;display:flex;flex-direction:column}
   .js.menu-open .crt{visibility:visible;opacity:1;animation:poweron .5s ease-out}
   @keyframes poweron{0%{transform:scale(1,.004);filter:brightness(4)}45%{transform:scale(1,.004);filter:brightness(4)}
     70%{transform:scale(1,1);filter:brightness(2)}100%{transform:none;filter:none}}
-  .crt::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;
-    background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
-  .crt::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;
-    box-shadow:inset 0 0 120px 30px rgba(0,0,0,.85);border-radius:18px}
-  .wrap{position:relative;max-width:900px;margin:0 auto;padding:64px 16px 40px}
-  .back{position:absolute;left:16px;top:16px;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan);
-    background:transparent;border:2px solid var(--cyan);padding:9px 11px;cursor:pointer;z-index:4}
-  .nojs .back{display:none}
+  /* the cabinet around the glass */
+  .bezel{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;max-width:1120px;width:100%;margin:0 auto;
+    background:linear-gradient(#111a28,#0a0f18 60%,#0c121c);border:2px solid #1d2b40;border-radius:14px;padding:6px 14px 14px;
+    box-shadow:0 0 0 2px #000,0 0 26px rgba(40,195,255,.25),inset 0 0 0 2px #070a10}
+  .bezel::before{content:"";position:absolute;inset:-2px;border-radius:14px;pointer-events:none;
+    box-shadow:inset 0 0 0 2px rgba(40,195,255,.55),inset 0 0 14px rgba(40,195,255,.2)}
+  .marquee{font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:4px;color:#bfefff;text-align:center;
+    padding:4px 0 8px;text-shadow:0 0 8px var(--cy)}
+  .glass{position:relative;flex:1;min-height:0;border-radius:22px/26px;overflow:hidden;background:#04101a;
+    box-shadow:inset 0 0 0 3px #02060a,0 0 0 3px #16263a}
+  .glass::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 1px,transparent 1px 3px)}
+  .glass::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:inherit;
+    box-shadow:inset 0 0 90px 18px rgba(0,0,0,.75),inset 0 0 22px rgba(40,195,255,.18);
+    background:radial-gradient(ellipse at 30% 12%,rgba(200,240,255,.07),transparent 45%)}
+  .gridbg{position:absolute;inset:0;pointer-events:none;opacity:.9;
+    background-image:linear-gradient(#0a2a3c 2px,transparent 2px),linear-gradient(90deg,#0a2a3c 2px,transparent 2px);
+    background-size:28px 28px;animation:gridmove 4s linear infinite}
+  @keyframes gridmove{to{background-position:28px 0}}
+  .screen{position:relative;z-index:2;height:100%;overflow-y:auto;padding:14px 22px 22px;display:flex;flex-direction:column;
+    scrollbar-width:thin;scrollbar-color:#1a4a66 transparent}
+  .nojs .screen{height:auto}
+  .hudbar{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:'Press Start 2P',monospace;
+    font-size:10px;color:#9fe6ff;letter-spacing:1px}
+  .hudbar b{color:#ffb040;font-weight:normal}
+  .back{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cy);background:rgba(4,16,26,.8);
+    border:2px solid var(--cy);padding:8px 10px;cursor:pointer}
+  .nojs .back{visibility:hidden}
   .back:focus-visible{outline:2px solid #fff;outline-offset:3px}
-  .crt header{text-align:center;margin-bottom:40px}
-  .crt h2.title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3.6vw,26px);letter-spacing:3px;margin:0 0 14px;
-    color:var(--cyan);text-shadow:0 0 10px rgba(110,240,255,.7),3px 3px 0 #000}
-  .crt .sub{color:#7fa8b4;margin:0}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:22px}
-  .card{background:var(--panel);border:2px solid var(--line);box-shadow:6px 6px 0 #000;
-    display:flex;flex-direction:column;transition:transform .12s,border-color .12s}
-  .card:hover{transform:translate(-2px,-2px);border-color:var(--accent)}
-  .art{height:150px;display:flex;align-items:center;justify-content:center;border-bottom:2px solid var(--line);
-    background:var(--artbg);image-rendering:pixelated;overflow:hidden}
-  .art pre{margin:0;font-family:'DejaVu Sans Mono',Menlo,Consolas,monospace;font-size:14px;line-height:1.1;color:var(--accent);text-shadow:0 0 6px var(--accent)}
-  .body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .crt h2.title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3.2vw,28px);letter-spacing:3px;margin:16px 0 18px;
+    text-align:center;color:#c8faff;text-shadow:0 0 10px rgba(40,195,255,.9),3px 3px 0 #02060a}
+  .tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .tile{position:relative;display:flex;flex-direction:column;text-decoration:none;color:#9fb9c6;background:#061722;
+    border:3px solid #123247;padding:5px;outline:none;transition:border-color .1s,transform .1s}
+  .tile img{display:block;width:100%;height:auto;aspect-ratio:5/3;image-rendering:pixelated;filter:saturate(.55) brightness(.7);
+    transition:filter .1s}
+  .tile .nm{font-family:'Press Start 2P',monospace;font-size:10px;line-height:1.5;padding:9px 2px 4px;text-align:center;letter-spacing:1px}
+  .tile .p1{position:absolute;left:50%;top:-14px;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:9px;
+    background:var(--accent);color:#04101a;padding:4px 6px;white-space:nowrap;visibility:hidden;box-shadow:2px 2px 0 #000}
+  .tile.sel,.nojs .tile:hover{border-color:var(--accent);color:#fff;transform:translateY(-3px);
+    box-shadow:0 0 0 2px #02060a,0 0 18px var(--accent),inset 0 0 12px rgba(255,255,255,.08)}
+  .tile.sel img,.nojs .tile:hover img{filter:none}
+  .tile.sel .nm{color:var(--accent);text-shadow:0 0 8px var(--accent)}
+  .tile.sel .p1{visibility:visible;animation:blink 1s steps(1) infinite}
+  .tile:focus-visible{outline:2px dashed #fff;outline-offset:4px}
+  .infos{margin-top:22px;border:2px solid #123247;background:rgba(3,12,20,.82);box-shadow:inset 0 0 0 2px #02060a}
+  .js .infos{display:grid}
+  .js .info{grid-area:1/1;visibility:hidden}
+  .js .info.on{visibility:visible}
+  .info{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px}
+  .nojs .info+.info{border-top:2px solid #123247}
   .tag{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--accent);letter-spacing:1px}
-  .card h2{font-family:'Press Start 2P',monospace;font-size:14px;line-height:1.5;margin:0}
-  .body p{margin:0;color:#c9c7c0}
-  .ver{color:var(--dim);font-size:18px}
-  .actions{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;padding-top:8px}
-  a.btn{font-family:'Press Start 2P',monospace;font-size:10px;text-decoration:none;color:#0d0f14;
+  .info h3{font-family:'Press Start 2P',monospace;font-size:14px;line-height:1.5;margin:0;color:#f2efe6}
+  .info p{margin:0;color:#c9d6dc}
+  .ver{color:#6f8f9e;font-size:18px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:6px}
+  a.btn{font-family:'Press Start 2P',monospace;font-size:10px;text-decoration:none;color:#04101a;
     background:var(--accent);padding:12px 14px;box-shadow:3px 3px 0 #000;display:inline-block}
   a.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
   a.btn.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent);padding:10px 12px}
   a.btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-  .u{--accent:var(--red);--artbg:linear-gradient(#0b0d12,#1a0f16)}
-  .u2{--accent:var(--violet);--artbg:linear-gradient(#0b0d12,#141028)}
-  .ac{--accent:var(--ochre);--artbg:linear-gradient(#f3b35a 0,#c8632f 55%,#6d2f1d 100%)}
-  .van{font-size:72px;filter:drop-shadow(4px 4px 0 rgba(0,0,0,.35));transform:scaleX(-1)}
-  .cos{--accent:var(--neon);--artbg:radial-gradient(circle at 70% 40%,#16314a 0,#05070c 70%)}
-  .card.soon{position:relative;filter:grayscale(1);opacity:.55;border-color:var(--line);pointer-events:none;box-shadow:6px 6px 0 #000}
-  .card.soon:hover{transform:none}
-  .soon-wrap{position:relative}
-  .soon-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}
-  .soon-label span{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3.4vw,22px);color:#ff2a3d;
-    border:4px solid #ff2a3d;padding:14px 18px;background:rgba(13,15,20,.82);transform:rotate(-8deg);
-    letter-spacing:2px;text-shadow:3px 3px 0 #000;box-shadow:4px 4px 0 #000}
-  span.btn{font-family:'Press Start 2P',monospace;font-size:10px;color:#0d0f14;background:var(--accent);padding:12px 14px;box-shadow:3px 3px 0 #000;display:inline-block}
-  footer{text-align:center;color:#6f8790;margin-top:48px;font-size:18px}
+  .u{--accent:#ff4d6d}
+  .u2{--accent:#9b8cff}
+  .ac{--accent:#e8a33d}
+  .cos{--accent:#36f1cd}
+  .ctl{font-family:'Press Start 2P',monospace;font-size:9px;line-height:1.8;color:#5f8ea3;text-align:center;margin:18px 0 0;letter-spacing:1px}
+  .ctl .touch{display:none}
+  @media (hover:none){.ctl .touch{display:inline}.ctl .keys{display:none}}
+  footer{text-align:center;color:#4f7080;padding-top:14px;font-size:17px}
+  .js .crt h2.title{margin-top:auto;padding-top:14px}
+  .js .ctl{margin-bottom:auto}
+  @media (max-width:760px){
+    .crt{padding:6px}
+    .bezel{padding:4px 7px 8px;border-radius:10px}
+    .marquee{font-size:8px;padding:3px 0 6px}
+    .glass{border-radius:14px/16px}
+    .screen{padding:10px 12px 14px}
+    .hudbar{font-size:8px}
+    .back{font-size:9px;padding:7px 8px}
+    .hudbar .hi{display:none}
+    .crt h2.title{margin:12px 0 18px}
+    .tiles{grid-template-columns:1fr 1fr;gap:16px 10px}
+    .tile{border-width:2px;padding:4px}
+    .tile .nm{font-size:8px;padding:7px 0 3px}
+    .tile .p1{font-size:8px;top:-12px}
+    .infos{margin-top:16px}
+    .info{padding:12px 12px 14px}
+    .info h3{font-size:12px}
+    body{font-size:20px}
+  }
   @media (prefers-reduced-motion:reduce){
-    .card,.stage.zoom,.stage.unzoom,.hud{transition:none}
-    .press{animation:none}
+    .stage.zoom,.stage.unzoom,.hud,.tile{transition:none}
+    .press,.gridbg,.tile.sel .p1{animation:none}
     .js.menu-open .crt{animation:none}
     .flash.go{animation:none}
   }
@@ -152,79 +197,83 @@
 <div class="flash" id="flash"></div>
 
 <section class="crt" id="games" aria-label="Game select">
-  <button class="back" id="back" type="button">◀ BACK</button>
-  <div class="wrap">
-  <header>
+ <div class="bezel">
+  <div class="marquee" aria-hidden="true">EMUSOFT</div>
+  <div class="glass">
+   <div class="gridbg" aria-hidden="true"></div>
+   <div class="screen">
+    <div class="hudbar">
+      <button class="back" id="back" type="button">◀ BACK</button>
+      <span class="hi" aria-hidden="true">HI-SCORE <b>990000</b></span>
+      <span aria-hidden="true">CREDIT <b>04</b></span>
+    </div>
     <h2 class="title">SELECT GAME</h2>
-    <p class="sub">Pick one and play. Progress saves in your browser.</p>
-  </header>
 
-  <main class="grid">
-    <article class="card u">
-      <div class="art"><pre>  ▐█▌ ▐██▌  ▐█▌  ████
-  ███ ████  ███  ████
- ─────────────────────
-   ░░ SECTOR 9 ░░</pre></div>
-      <div class="body">
+    <ul class="tiles" id="tiles">
+      <li><a class="tile u" href="underpass/" data-i="0" aria-describedby="info-0">
+        <span class="p1" aria-hidden="true">1P ▶</span>
+        <img src="assets/sel-underpass.png?v=1" alt="" width="80" height="48">
+        <span class="nm">UNDERPASS</span></a></li>
+      <li><a class="tile u2" href="underpass-2/" data-i="1" aria-describedby="info-1">
+        <span class="p1" aria-hidden="true">1P ▶</span>
+        <img src="assets/sel-underpass2.png?v=1" alt="" width="80" height="48">
+        <span class="nm">UNDERPASS 2</span></a></li>
+      <li><a class="tile ac" href="across-country-australia/" data-i="2" aria-describedby="info-2">
+        <span class="p1" aria-hidden="true">1P ▶</span>
+        <img src="assets/sel-australia.png?v=1" alt="" width="80" height="48">
+        <span class="nm">ACROSS COUNTRY</span></a></li>
+      <li><a class="tile cos" href="across-cosmos/" data-i="3" aria-describedby="info-3">
+        <span class="p1" aria-hidden="true">1P ▶</span>
+        <img src="assets/sel-cosmos.png?v=1" alt="" width="80" height="48">
+        <span class="nm">ACROSS COSMOS</span></a></li>
+    </ul>
+
+    <div class="infos" aria-live="polite">
+      <article class="info u" id="info-0">
         <span class="tag">CYBERPUNK RPG</span>
-        <h2>UNDERPASS</h2>
+        <h3>UNDERPASS</h3>
         <p>Wake under the Highway 9 overpass with no memory. Find Mara, get the Helios data shard out of Sector 9, and take on Nakamura on the bridge.</p>
         <span class="ver">v5.6.1 · text RPG · turn-based combat</span>
         <div class="actions">
           <a class="btn" href="underpass/">▶ PLAY</a>
           <a class="btn ghost" href="underpass-wiki/">WIKI</a>
         </div>
-      </div>
-    </article>
-
-    <article class="card u2">
-      <div class="art"><pre>// SEQUENCE 2 //
- CONTINUATION
-   PROTOCOL</pre></div>
-      <div class="body">
+      </article>
+      <article class="info u2" id="info-1">
         <span class="tag">CYBERPUNK RPG · SEQUEL</span>
-        <h2>UNDERPASS 2</h2>
+        <h3>UNDERPASS 2</h3>
         <p>Continuation Protocol. Bring your Underpass operative across, find Mara again, and face what Helios made of Nakamura.</p>
         <span class="ver">v1.0.1 · imports Underpass saves</span>
         <div class="actions">
           <a class="btn" href="underpass-2/">▶ PLAY</a>
         </div>
-      </div>
-    </article>
-
-    <article class="card ac">
-      <div class="art"><div class="van">🚐</div></div>
-      <div class="body">
+      </article>
+      <article class="info ac" id="info-2">
         <span class="tag">COSY ROAD TRIP</span>
-        <h2>ACROSS COUNTRY: AUSTRALIA</h2>
+        <h3>ACROSS COUNTRY: AUSTRALIA</h3>
         <p>One delivery from Dampier to Mallacoota. Fit out your rig, chase good sleep, explore every stop, and maybe pick up a dog or a cat on the way.</p>
         <span class="ver">build 6 · 60 stops · 4 rigs</span>
         <div class="actions">
           <a class="btn" href="across-country-australia/">▶ PLAY</a>
           <a class="btn ghost" href="across-country-australia-leaderboard/">LEADERBOARD</a>
         </div>
-      </div>
-    </article>
-
-    <article class="card cos">
-      <div class="art"><pre>  ·   ✦      ·    ·
-     ·   ═══▶   ·
-  ✦     ·    ·   ◯
-   ·       ·   ✦</pre></div>
-      <div class="body">
+      </article>
+      <article class="info cos" id="info-3">
         <span class="tag">SPACE VOYAGE</span>
-        <h2>ACROSS COSMOS: ALPHA CENTAURI</h2>
+        <h3>ACROSS COSMOS: ALPHA CENTAURI</h3>
         <p>Command the IASF-01 New Dawn across 4.37 light years. Keep the crew steady, trade and upgrade the ship, and fight only when you go looking for trouble.</p>
         <span class="ver">build 0.8.1 · walk the ship · plays on phones</span>
         <div class="actions">
           <a class="btn" href="across-cosmos/">▶ PLAY</a>
         </div>
-      </div>
-    </article>
-  </main>
+      </article>
+    </div>
 
-  <footer>© Kain Mercer · EmuSoft. Progress saves in your browser.</footer>
+    <p class="ctl"><span class="keys">◀ ▶ CHOOSE · ENTER PLAY · ESC BACK</span><span class="touch">TAP A GAME · TAP AGAIN TO PLAY</span></p>
+    <footer>© Kain Mercer · EmuSoft. Progress saves in your browser.</footer>
+   </div>
   </div>
+ </div>
 </section>
 
 <script>
@@ -357,7 +406,7 @@
     timers.push(setTimeout(function(){ clear(); unhook(); }, 2700));
     var skip = function(e){
       timers.forEach(clearTimeout); clear(); unhook();
-      if (e && e.type === 'keydown') e.stopImmediatePropagation();
+      if (e && e.type === 'keydown' && !root.classList.contains('menu-open')) e.stopImmediatePropagation();
     };
     var unhook = function(){ removeEventListener('keydown', skip); room.removeEventListener('pointerdown', skip); };
     addEventListener('keydown', skip); room.addEventListener('pointerdown', skip);
@@ -374,7 +423,7 @@
     var done = function(){
       root.classList.add('menu-open'); room.classList.remove('zooming'); running = false; busy = false;
       if (!instant && !reduce) { flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
-      crt.scrollTop = 0;
+      crt.querySelector('.screen').scrollTop = 0;
       document.getElementById('back').focus({preventScroll:true});
       if (location.hash !== '#games') history.replaceState(null, '', '#games');
     };
@@ -403,6 +452,38 @@
     if (e.key === 'Escape') close();
     else if ((e.key === 'Enter' || e.key === ' ') && !root.classList.contains('menu-open')
              && (document.activeElement === document.body || !document.activeElement)) { e.preventDefault(); open(false); }
+  });
+  // game select: pick a tile to see its details, pick it again (or press PLAY) to start
+  var tiles = [].slice.call(document.querySelectorAll('.tile'));
+  var infos = [].slice.call(document.querySelectorAll('.info'));
+  var sel = 0;
+  try { sel = +sessionStorage.getItem('arcade-sel') || 0; } catch (e) {}
+  function pick(i){
+    sel = (i + tiles.length) % tiles.length;
+    tiles.forEach(function(t, k){ t.classList.toggle('sel', k === sel); if (k === sel) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
+    infos.forEach(function(n, k){ n.classList.toggle('on', k === sel); });
+    try { sessionStorage.setItem('arcade-sel', sel); } catch (e) {}
+  }
+  tiles.forEach(function(t, k){
+    // a tap focuses the tile before it clicks, so remember whether it was already chosen
+    var was = null;
+    t.addEventListener('pointerdown', function(){ was = (k === sel); });
+    t.addEventListener('click', function(e){
+      if (was === false || k !== sel) { e.preventDefault(); pick(k); }
+      was = null;
+    });
+    t.addEventListener('focus', function(){ pick(k); });
+    t.addEventListener('pointerenter', function(e){ if (e.pointerType === 'mouse') pick(k); });
+  });
+  pick(sel);
+  addEventListener('keydown', function(e){
+    if (!root.classList.contains('menu-open') || e.altKey || e.ctrlKey || e.metaKey) return;
+    var cols = getComputedStyle(document.getElementById('tiles')).gridTemplateColumns.split(' ').length;
+    var d = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-cols, ArrowDown:cols}[e.key];
+    if (d === undefined) return;
+    var n = sel + d;
+    if (cols < tiles.length && (n < 0 || n >= tiles.length)) return;
+    e.preventDefault(); pick(n); tiles[sel].focus();
   });
   if (location.hash === '#games') open(true);
 })();
