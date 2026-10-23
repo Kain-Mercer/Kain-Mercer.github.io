@@ -26,7 +26,7 @@
     'aca.pet':      {game: 'aca',  name: 'Pet bed',                       hint: 'Pick up a friend on the road'},
     'aca.rig':      {game: 'aca',  name: 'Rig model',                     hint: 'Finish a delivery'},
     'cos.cat':      {game: 'cos',  name: 'Commander plush',               hint: 'Pet the ship cat'},
-    'cos.chart':    {game: 'cos',  name: 'Alpha Centauri star chart',     hint: 'Make your first jump'},
+    'cos.chart':    {game: 'cos',  name: 'Alpha Centauri star chart',     hint: 'Reach your first waypoint'},
     'cos.newdawn':  {game: 'cos',  name: 'New Dawn model',                hint: 'Reach Alpha Centauri'},
     'room.plaque':  {game: 'room', name: 'Hi-score plaque',               hint: 'Find the room'},
     'room.lava':    {game: 'room', name: 'Lava lamp',                     hint: 'Fill 5 spots'},
