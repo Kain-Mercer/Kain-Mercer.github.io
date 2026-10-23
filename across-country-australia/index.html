@@ -109,9 +109,10 @@ header p{
 /* route progress */
 .routebox{ position:relative; z-index:2; margin-bottom:12px; }
 .routebox .rlbl{
-  display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;
+  display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;
   font-family:'JetBrains Mono', monospace; font-size:0.68rem; color: var(--muted); text-transform:uppercase; letter-spacing:0.5px;
 }
+.routebox .rlbl > span:last-child{ flex-shrink:0; white-space:nowrap; }
 .routebox .legname{
   font-family:'Fraunces', serif; font-style:italic; font-size:0.95rem; color: var(--parchment); text-transform:none; letter-spacing:0;
 }
@@ -600,6 +601,7 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
 }
 
 /* door note - a second, hastier note pinned to Mallacoota's front door */
+.modalOverlay.doorNoteOverlay{ z-index:60; } /* opens together with the Mallacoota servo, so it has to sit on top */
 .doorNoteOverlay .modal.doorNoteModal{
   background: transparent; border:none; box-shadow:none; padding:0; max-width:400px;
   max-height:none; overflow:visible;
@@ -1018,13 +1020,13 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
     <h2 class="setupTitle">Before you hit the road</h2>
     <p class="setupSub">A delivery from Dampier, WA to Mallacoota, VIC. Who's driving?</p>
 
-    <label class="setupLabel">Name</label>
     <label class="setupLabel">Delivery Mode</label>
     <div class="choicePills" id="modePills">
       <button class="pill" data-value="classic">Classic Route</button>
       <button class="pill" data-value="network">Network Deliveries</button>
     </div>
 
+    <label class="setupLabel">Name</label>
     <input type="text" id="setupName" class="setupInput" placeholder="What should we call you?" maxlength="24" autocomplete="off" />
 
     <label class="setupLabel">Delivery Company</label>
@@ -2995,6 +2997,9 @@ function driveButtonState(){
   const maxKmByFuel = state.fuel * perf.efficiency;
 
   if(distToNext > 0.5){
+    if(maxKmByFuel < 1 && state.jerryCanFound && state.jerryCanFuel > 0.5){
+      return {icon:'🛢️', label:'Pour in the jerry can', sub:`tank's empty - tip the ${Math.round(state.jerryCanFuel)}L in the can into it and keep going`, tired:true};
+    }
     if(maxKmByFuel < 1){
       const service = roadsideServiceFor(next.st);
       return {icon:'📞', label:`Call ${service}`, sub: state.cozyMode
@@ -3035,6 +3040,11 @@ function driveStep(){
   // running dry - camping in place forever, one kilometre short, with distanceTraveled never
   // advancing. Checking the fuel/energy RATES directly, before distance ever enters into it,
   // fixes that: the last short hop into a stop now completes like any other.
+  if(maxKmByFuel < 1 && state.jerryCanFound && state.jerryCanFuel > 0.5){
+    // Empty tank but fuel in the jerry can: pour it in rather than calling a tow.
+    pourJerryCan();
+    return;
+  }
   if(maxKmByFuel < 1){
     callRoadsideAssist();
     return;
@@ -4333,6 +4343,14 @@ const NET_CARGO_TYPES = [
   { name: 'Building materials',     weightClass: 'bulky' },
 ];
 let netJobIdCounter = 1;
+// Saved jobs keep their ids, so carry on numbering after the highest one in the save.
+// Otherwise a reload hands out job-1 again, and delivering one job-1 wipes the other.
+function netSyncJobIdCounter(){
+  for(const j of (state.activeDeliveries || [])){
+    const n = parseInt(String(j.id || '').replace('job-',''), 10);
+    if(n >= netJobIdCounter) netJobIdCounter = n + 1;
+  }
+}
 function netEstimateReward(km, weightClass){
   const perKm = { heavy:2.6, perishable:3.1, urgent:3.4, bulky:2.2, fragile:2.8 }[weightClass] || 2.5;
   const variance = 0.85 + Math.random()*0.3;
@@ -4376,6 +4394,7 @@ function netPayFor(job){
 }
 function netGenerateJobOffers(originCity, count){
   count = count || 4;
+  netSyncJobIdCounter();
   const candidates = Object.keys(NET_NODES).filter(n => n !== originCity);
   const offers = [], used = new Set();
   while(offers.length < count && used.size < candidates.length){
@@ -4536,7 +4555,7 @@ function netSettleHere(){
     } else {
       const { pay, late } = netPayFor(ev.job);
       state.cash += pay;
-      state.activeDeliveries = state.activeDeliveries.filter(j => j.id !== ev.job.id);
+      state.activeDeliveries = state.activeDeliveries.filter(j => j !== ev.job);
       if(!state.seasonOver){
         state.netStats = state.netStats || { delivered:0, onTime:0 };
         state.netStats.delivered += 1;
