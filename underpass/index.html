@@ -865,6 +865,7 @@ body.in-game #patch-btn{opacity:0;pointer-events:none;}
   opacity:.5;
 }
 </style>
+<script src="../shared/emusoft.js"></script>
 </head>
 <body>
 
@@ -2255,6 +2256,7 @@ function checkLevelUp(){
 
 function addItem(id){
   S.inventory.push(id);
+  if(id==='data_shard') if(window.EmuSoft)EmuSoft.unlock('up.shard');
   const it=GAME.ITEMS[id]; if(!it) return;
   if(it.type==='weapon'){
     const cur=S.equippedWeapon?GAME.ITEMS[S.equippedWeapon]:null;
@@ -2547,6 +2549,7 @@ function closeScavenge(){ SCAV.active=false; SCAV.depth=0; showScreen('game-scre
 // ─── NPC SYSTEM ──────────────────────────────────────────────────────────────
 function openNPC(key,returnNode){
   const npc=GAME.NPCS[key]; if(!npc) return;
+  if(key==='mara') if(window.EmuSoft)EmuSoft.unlock('up.mara');
   NPC_CTX={key,returnNode};
   const rel=S.npcRel[key]||0;
   const inner=document.getElementById('npc-inner');
@@ -3018,6 +3021,7 @@ function endGameOver(){
 }
 
 function endVictory(text){
+  if(window.EmuSoft)EmuSoft.unlock('up.blade');
   // Check Mara romance for alternate ending
   let endText=text;
   if(S.npcRel.mara>=4&&S.flags['mara_confession']){

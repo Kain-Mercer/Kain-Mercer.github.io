@@ -886,6 +886,7 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
 .cashbadge.cashflash-gain{ animation: cashFlashKf 0.4s ease; color:var(--gold); text-shadow:0 0 10px rgba(255,213,138,0.8); }
 .cashbadge.cashflash-spend{ animation: cashFlashKf 0.4s ease; }
 </style>
+<script src="../shared/emusoft.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -2373,6 +2374,7 @@ function tryFindPet(){
     const petOptions = state.petPreference==='cat' ? ['pet_cat','pet_cat2'] : ['pet_dog','pet_dog2'];
     const petId = pickFrom(petOptions);
     addItem(petId);
+    if(window.EmuSoft) EmuSoft.unlock('aca.pet', {variant: state.petPreference==='cat' ? 'cat' : 'dog'});
     const flavorByPet = {
       pet_dog: "A dust-caked kelpie trots over, sits down in front of you, and looks up like it's already decided to come along.",
       pet_dog2: "A golden retriever bounds up out of nowhere, plants two dusty paws on your leg, and looks up at you like you're already best mates.",
@@ -3052,7 +3054,7 @@ function driveStep(){
   pushLog(`You drive ${fmtKm(kmThisStep)} km toward ${next.name} <span style="color:var(--muted)">(${next.st} · ${fmtHour(state.hour)})</span>.`, 'day');
 
   if(state.distanceTraveled >= next.cumEnd - 0.001){
-    state.visitedStops.push(next.name);
+    state.visitedStops.push(next.name); if(window.EmuSoft) EmuSoft.unlock('aca.sign');
     if(next.special==='arrival'){
       state.arrived = true;
       pushLog(`You drive the last stretch in. The address on the delivery note matches the one on the letterbox. You've made it to <strong>${next.name}</strong>.`, 'day');
@@ -3131,7 +3133,7 @@ function callRoadsideAssist(){
   const tier = getTier(currentComfort());
   state.energy = Math.round(currentPerf().maxEnergy * tier.energyPct);
   state.distanceTraveled = next.cumEnd;
-  state.visitedStops.push(next.name);
+  state.visitedStops.push(next.name); if(window.EmuSoft) EmuSoft.unlock('aca.sign');
 
   if(next.special === 'arrival'){
     state.arrived = true;
@@ -3633,6 +3635,7 @@ function statLine(it){
 }
 
 function showArrival(){
+  if(window.EmuSoft) EmuSoft.unlock('aca.rig');
   SFX.play('arrival');
   state.arrivalCelebrated = true;
   document.getElementById('arrivalCompanyLine').textContent = `A ${state.companyName || 'No Fixed Address Deliveries'} delivery, completed.`;

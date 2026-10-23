@@ -330,6 +330,7 @@ body.in-game #patch-btn{opacity:0 !important;pointer-events:none;animation:none;
   .stat{font-size:10px;}
 }
 </style>
+<script src="../shared/emusoft.js"></script>
 </head>
 <body>
 
@@ -1638,6 +1639,7 @@ async function tryFetchAscii(key, el){
 // ─── NPC ──────────────────────────────────────────────────────────────────────
 function openNPC(key, returnNode){
   const npc=GAME.NPCS[key]; if(!npc) return;
+  if(key==='mara') if(window.EmuSoft)EmuSoft.unlock('up2.helmet');
   NPC_CTX={key,returnNode};
   const rel=S.npcRel[key]||0;
   const inner=document.getElementById('npc-inner');
@@ -1902,6 +1904,7 @@ function endGameOver(){
 }
 
 function endVictory(text){
+  if(window.EmuSoft)EmuSoft.unlock('up2.marquee');
   let endText=`Nakamura-Ω is offline.\n\nYou stand on the roof of the Helios Spire in the rain. Forty floors up. The sector spread out below you — lights and noise and six million people who are starting to understand what was done to them.\n\nThe data is still transmitting. Somewhere, a journalist is reading a file with your sector's name on it. Somewhere, a lawyer is making a call.\n\nIt's not enough. It's never enough.\n\nBut it's something.`;
 
   if(S.npcRel.mara>=4&&S.flags['come_with']){
@@ -2174,6 +2177,7 @@ function startGame(){
   document.getElementById('hdr-name').textContent='[ '+S.name+' ]';
   document.body.classList.add('in-game');
   showScreen('game-screen');
+  if(window.EmuSoft)EmuSoft.unlock('up2.neon');
   updateStats(); updateInv(); updateNeeds(); updateStatusTags();
   renderNode('start');
   if(S.fromU1) setTimeout(()=>notify('Welcome back, '+S.name+'. Sector 9 remembers.','level'),600);

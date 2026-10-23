@@ -72,6 +72,7 @@
   /* ---------- the cabinet screen (game select) ---------- */
   .crt{--cy:#28c3ff;position:relative;background:#06080d;min-height:100vh;padding:14px}
   .js .crt{position:fixed;inset:0;z-index:20;visibility:hidden;opacity:0;display:flex;flex-direction:column}
+  .js:not(.menu-open) .crt *{visibility:hidden!important}
   .js.menu-open .crt{visibility:visible;opacity:1;animation:poweron .5s ease-out}
   @keyframes poweron{0%{transform:scale(1,.004);filter:brightness(4)}45%{transform:scale(1,.004);filter:brightness(4)}
     70%{transform:scale(1,1);filter:brightness(2)}100%{transform:none;filter:none}}
@@ -165,6 +166,60 @@
     .info h3{font-size:12px}
     body{font-size:20px}
   }
+  /* ---------- the back room easter egg ---------- */
+  .js #items{opacity:0}
+  .js .on #items{opacity:1}
+  .spot{position:absolute;padding:0;margin:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .spot:focus-visible{outline:1px solid var(--cyan);outline-offset:1px}
+  .js.menu-open .spot{visibility:hidden}
+  .deco{position:fixed;inset:0;z-index:40;background:#06080d;display:flex;flex-direction:column}
+  .deco[hidden]{display:none}
+  .deco-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;
+    font-family:'Press Start 2P',monospace;font-size:10px;color:#9fe6ff;letter-spacing:1px;border-bottom:3px solid #28c3ff}
+  .deco-title{color:#c8faff;text-shadow:0 0 8px #28c3ff}
+  .deco-count b{color:#ffb040;font-weight:normal}
+  .deco-view{position:relative;flex:1;min-height:150px;overflow-x:auto;overflow-y:hidden;background:#000;
+    scrollbar-width:thin;scrollbar-color:#1a4a66 transparent}
+  .deco-room{position:relative;margin:0 auto}
+  .deco-room canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+  .dslot{position:absolute;padding:0;margin:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .dslot:focus-visible{outline:2px dashed #fff;outline-offset:2px}
+  .deco-tray{flex:none;max-height:46vh;overflow-y:auto;padding:10px 14px 14px;border-top:3px solid #28c3ff;background:#06080d;
+    scrollbar-width:thin;scrollbar-color:#1a4a66 transparent}
+  .deco-msgrow{display:flex;align-items:center;gap:12px;min-height:36px;margin:-10px -14px 8px;padding:8px 14px 6px;
+    position:sticky;top:-10px;z-index:1;background:#06080d}
+  .deco-msg{margin:0;color:#c9d6dc;font-size:20px;line-height:1.2}
+  .deco-msg b{font-weight:normal;color:#fff}
+  .deco-btn{font-family:'Press Start 2P',monospace;font-size:9px;color:#04101a;background:#ffb040;border:0;padding:9px 10px;
+    box-shadow:2px 2px 0 #000;cursor:pointer;white-space:nowrap}
+  .deco-btn.ghost{background:transparent;color:#6ef0ff;border:2px solid #6ef0ff;box-shadow:none;padding:7px 9px}
+  .deco-btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  .deco-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 18px}
+  .dgroup h3{font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1px;margin:0 0 6px;color:var(--accent)}
+  .dgroup h3 span{color:#5f8ea3}
+  .ditem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#0a141e;border:2px solid #16293a;
+    color:#dfe6ea;font-family:'VT323',ui-monospace,monospace;font-size:19px;line-height:1.1;padding:4px 8px 4px 4px;margin:0 0 5px;cursor:pointer;min-height:44px}
+  .ditem .th{flex:none;width:52px;height:34px;display:flex;align-items:center;justify-content:center;background:#04090f}
+  .ditem canvas{image-rendering:pixelated;display:block}
+  .ditem .nm2{flex:1;min-width:0}
+  .ditem .tg{display:block;font-family:'Press Start 2P',monospace;font-size:7px;color:#5f8ea3;margin-top:3px;letter-spacing:1px}
+  .ditem .tg.new{color:#ffb040}
+  .ditem:hover{border-color:#2c5a78}
+  .ditem.sel{border-color:#ffb040;box-shadow:0 0 10px rgba(255,176,64,.45)}
+  .ditem.locked{color:#5c6c78;cursor:help}
+  .ditem.locked .th{color:#26394a;font-family:'Press Start 2P',monospace;font-size:12px}
+  .ditem:focus-visible{outline:2px dashed #fff;outline-offset:2px}
+  .deco-io{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;color:#4f7080;font-size:17px}
+  @media (max-width:760px){
+    .deco-bar{font-size:8px;padding:8px 10px}
+    .deco-tray{padding:8px 10px 12px}
+    .deco-msgrow{margin:-8px -10px 8px;padding:8px 10px 6px;top:-8px}
+    .ditem .tg{font-size:6px}
+    .deco-groups{grid-template-columns:1fr 1fr;gap:10px 10px}
+    .ditem{font-size:17px;gap:6px}
+    .ditem .th{width:40px}
+    .deco-msg{font-size:18px}
+  }
   @media (prefers-reduced-motion:reduce){
     .stage.zoom,.stage.unzoom,.hud,.tile{transition:none}
     .press,.gridbg,.tile.sel .p1{animation:none}
@@ -180,8 +235,12 @@
   <div class="stage" id="stage">
     <img class="layer dark" src="assets/room-dark.png?v=5" alt="" width="384" height="216">
     <img class="layer lit" src="assets/room-lit.png?v=5" alt="A dark back room full of 90s junk and plastic sheeting. One arcade cabinet still glows at the far wall." width="384" height="216">
+    <canvas class="layer" id="items" width="384" height="216" aria-hidden="true"></canvas>
     <canvas class="layer" id="fx" width="384" height="216" aria-hidden="true"></canvas>
     <button class="cab" id="cab" type="button" aria-label="Play the arcade cabinet: choose a game"></button>
+    <button class="spot" id="cal" type="button" tabindex="-1" aria-label="An old 1993 calendar" style="left:134px;top:48px;width:19px;height:21px"></button>
+    <button class="spot" id="crate" type="button" hidden aria-label="A taped-up crate with a glowing mark" style="left:208px;top:156px;width:18px;height:20px"></button>
+    <button class="spot" id="toolbox" type="button" hidden aria-label="Decorate the room" style="left:90px;top:191px;width:14px;height:10px"></button>
   </div>
   <div class="hud">
     <div>
@@ -190,7 +249,7 @@
     </div>
     <div class="go">
       <button class="press" id="press" type="button">▶ PRESS START</button>
-      <span class="hint">or click the cabinet · <a href="#games" id="list">just show me the list</a></span>
+      <span class="hint">or click the cabinet · <a href="#games" id="list">just show me the list</a><span id="deco-link" hidden> · <a href="#room" id="deco-open">decorate the room</a></span></span>
     </div>
   </div>
 </div>
@@ -276,6 +335,28 @@
  </div>
 </section>
 
+<section class="deco" id="deco" role="dialog" aria-modal="true" aria-labelledby="deco-title" hidden>
+  <div class="deco-bar">
+    <button class="back" id="deco-done" type="button">◀ DONE</button>
+    <span class="deco-title" id="deco-title">BACK ROOM</span>
+    <span class="deco-count" id="deco-count"></span>
+  </div>
+  <div class="deco-view" id="deco-view">
+    <div class="deco-room" id="deco-room"><canvas id="deco-cv" width="384" height="216" aria-hidden="true"></canvas></div>
+  </div>
+  <div class="deco-tray">
+    <div class="deco-msgrow"><p class="deco-msg" id="deco-msg" aria-live="polite"></p><button class="deco-btn" id="deco-away" type="button" hidden>PUT AWAY</button></div>
+    <div class="deco-groups" id="deco-groups"></div>
+    <div class="deco-io">
+      <button class="deco-btn ghost" id="deco-copy" type="button">COPY ROOM CODE</button>
+      <button class="deco-btn ghost" id="deco-paste" type="button">LOAD ROOM CODE</button>
+      <span>Your room saves in this browser. Copy the code to move it to another one.</span>
+    </div>
+  </div>
+</section>
+
+<script src="shared/emusoft.js"></script>
+<script src="assets/room-items.js"></script>
 <script>
 (function(){
   var W = 384, H = 216;
@@ -450,7 +531,7 @@
   document.getElementById('back').addEventListener('click', close);
   addEventListener('keydown', function(e){
     if (e.key === 'Escape') close();
-    else if ((e.key === 'Enter' || e.key === ' ') && !root.classList.contains('menu-open')
+    else if ((e.key === 'Enter' || e.key === ' ') && !root.classList.contains('menu-open') && !root.classList.contains('deco-open')
              && (document.activeElement === document.body || !document.activeElement)) { e.preventDefault(); open(false); }
   });
   // game select: pick a tile to see its details, pick it again (or press PLAY) to start
@@ -486,6 +567,326 @@
     e.preventDefault(); pick(n); tiles[sel].focus();
   });
   if (location.hash === '#games') open(true);
+})();
+
+// ---------- the back room: a hidden decorating game fed by every game on the site ----------
+(function(){
+  if (!window.EmuSoft || !window.RoomArt) return;
+  var E = EmuSoft, A = RoomArt, root = document.documentElement;
+  var stage = document.getElementById('stage'), room = document.getElementById('room');
+  var g = document.getElementById('items').getContext('2d');
+  var crateBtn = document.getElementById('crate'), toolBtn = document.getElementById('toolbox');
+  var deco = document.getElementById('deco'), view = document.getElementById('deco-view'), droom = document.getElementById('deco-room');
+  var dg = document.getElementById('deco-cv').getContext('2d');
+  var msg = document.getElementById('deco-msg'), away = document.getElementById('deco-away');
+  var litImg = stage.querySelector('.lit');
+  var data = E.load(), sel = null, opener = null, calFlash = 0;
+  var ORDER = ['up', 'up2', 'aca', 'cos', 'room'];
+
+  // players who already reached milestones before the room existed get those items now
+  function backfill(){
+    var got = 0;
+    function u(id, v){ if (E.unlock(id, {quiet:true, variant:v})) got++; }
+    function saves(index){
+      var out = [];
+      try { (JSON.parse(localStorage.getItem(index) || '[]') || []).forEach(function(k){
+        try { var s = JSON.parse(localStorage.getItem(k)); if (s && typeof s === 'object') out.push(s); } catch (e) {}
+      }); } catch (e) {}
+      return out;
+    }
+    function metMara(s){
+      if (s.npcRel && s.npcRel.mara >= 1) return true;
+      return Object.keys(s.flags || {}).some(function(f){ return /^mara/.test(f); });
+    }
+    saves('underpass_saves_index').forEach(function(s){
+      if (metMara(s)) u('up.mara');
+      if ((s.inventory || []).indexOf('data_shard') >= 0) u('up.shard');
+    });
+    saves('underpass2_saves_index').forEach(function(s){
+      u('up2.neon');
+      if (metMara(s)) u('up2.helmet');
+    });
+    try {
+      var a = JSON.parse(localStorage.getItem('across-country-au-v2'));
+      if (a) {
+        if ((a.visitedStops || []).length) u('aca.sign');
+        if (a.petFound) u('aca.pet', a.petPreference === 'cat' ? 'cat' : 'dog');
+        if (a.arrived || a.arrivalCelebrated) u('aca.rig');
+      }
+    } catch (e) {}
+    if (got) E.toast('FROM YOUR SAVES', got + (got === 1 ? ' item' : ' items') + ' for the back room', '#ffb040');
+  }
+  backfill();
+  data = E.load();
+
+  function owned(id){ return !!data.items[id]; }
+  function slotOf(id){ for (var k in data.layout) if (data.layout[k] === id) return k; return null; }
+  function slotById(id){ for (var i = 0; i < A.SLOTS.length; i++) if (A.SLOTS[i].id === id) return A.SLOTS[i]; return null; }
+  function persist(){ E.save(data); }
+
+  // room items earned by decorating
+  function roomUnlocks(){
+    var placed = Object.keys(data.layout).filter(function(k){ return data.layout[k]; }).length;
+    var games = ['up', 'up2', 'aca', 'cos'].filter(function(gm){
+      return Object.keys(data.items).some(function(id){ return E.ITEMS[id] && E.ITEMS[id].game === gm; });
+    }).length;
+    var any = false;
+    if (data.found && placed >= 5) any = E.unlock('room.lava') || any;
+    if (data.found && games === 4) any = E.unlock('room.minicab') || any;
+    if (any) { data = E.load(); if (!deco.hidden) tray(); }
+  }
+
+  function refreshRoom(){
+    var hasAny = Object.keys(data.items).length > 0;
+    crateBtn.hidden = !(hasAny && !data.found);
+    toolBtn.hidden = !data.found;
+    document.getElementById('deco-link').hidden = !data.found;
+  }
+  refreshRoom();
+
+  // ---- finding the egg ----
+  function discover(){
+    if (!data.found) {
+      data.found = true; persist();
+      E.unlock('room.plaque');
+      data = E.load();
+      refreshRoom();
+    }
+    openDeco();
+  }
+  crateBtn.addEventListener('click', discover);
+  toolBtn.addEventListener('click', openDeco);
+  document.getElementById('deco-open').addEventListener('click', function(e){ e.preventDefault(); openDeco(); });
+  var calHits = [];
+  document.getElementById('cal').addEventListener('click', function(e){
+    e.stopPropagation();
+    var now = performance.now();
+    calHits = calHits.filter(function(t){ return now - t < 1500; }); calHits.push(now);
+    calFlash = now;
+    if (calHits.length >= 3) { calHits = []; discover(); }
+  });
+  var KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'], kpos = 0;
+  addEventListener('keydown', function(e){
+    if (root.classList.contains('menu-open') || root.classList.contains('deco-open')) { kpos = 0; return; }
+    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    kpos = (k === KONAMI[kpos]) ? kpos + 1 : (k === KONAMI[0] ? 1 : 0);
+    if (kpos === KONAMI.length) { kpos = 0; discover(); }
+  });
+
+  // ---- decorate mode ----
+  var slotBtns = {};
+  A.SLOTS.forEach(function(s){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'dslot';
+    var x = s.x - s.w / 2, y = (s.kind === 'top' || s.kind === 'floor') ? s.y - s.h : s.y - s.h / 2;
+    b.style.left = (x / 384 * 100) + '%'; b.style.top = (y / 216 * 100) + '%';
+    b.style.width = (s.w / 384 * 100) + '%'; b.style.height = (s.h / 216 * 100) + '%';
+    b.addEventListener('click', function(){ tapSlot(s); });
+    droom.appendChild(b); slotBtns[s.id] = b;
+  });
+
+  function size(){
+    var h = view.clientHeight, s = h / 216;
+    if (384 * s <= view.clientWidth) s = Math.min(s, view.clientWidth / 384);
+    droom.style.width = Math.round(384 * s) + 'px'; droom.style.height = Math.round(216 * s) + 'px';
+    view.scrollLeft = Math.max(0, (384 * s - view.clientWidth) / 2);
+  }
+  var lastH = 0;
+  function resized(){ if (!deco.hidden && view.clientHeight !== lastH) { lastH = view.clientHeight; size(); } }
+  addEventListener('resize', resized);
+  if (window.ResizeObserver) new ResizeObserver(resized).observe(view);
+
+  function say(html, showAway){ msg.innerHTML = html; away.hidden = !showAway; }
+  function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function idle(){
+    var n = Object.keys(data.items).length;
+    say(n ? 'Tap an item, then a glowing spot in the room.' : 'Nothing here yet. Play the games to find things for the room.', false);
+  }
+  function pick(id){
+    sel = id;
+    var it = E.ITEMS[id];
+    say('<b>' + esc(it.name) + '</b>: tap a glowing spot to put it there.', !!slotOf(id));
+    tray(); labels();
+  }
+
+  function tapSlot(s){
+    var here = data.layout[s.id];
+    if (sel) {
+      if (here === sel) { sel = null; idle(); tray(); labels(); return; }
+      if (!A.fits(A.ITEMS[sel], s)) {
+        if (here) return pick(here);
+        say('<b>' + esc(E.ITEMS[sel].name) + '</b> doesn\'t fit there. Try a glowing spot.', !!slotOf(sel));
+        return;
+      }
+      var from = slotOf(sel);
+      if (from) delete data.layout[from];
+      data.layout[s.id] = sel;
+      persist(); sel = null; idle(); tray(); labels(); roomUnlocks();
+      return;
+    }
+    if (here) return pick(here);
+    say('Pick an item from the list below first.', false);
+  }
+  away.addEventListener('click', function(){
+    var from = sel && slotOf(sel);
+    if (from) { delete data.layout[from]; persist(); }
+    sel = null; idle(); tray(); labels();
+  });
+
+  function labels(){
+    A.SLOTS.forEach(function(s){
+      var here = data.layout[s.id], b = slotBtns[s.id];
+      var can = sel && A.fits(A.ITEMS[sel], s);
+      b.setAttribute('aria-label', s.label + ': ' + (here ? E.ITEMS[here].name : 'empty') + (can ? ' (fits)' : ''));
+    });
+  }
+
+  function thumb(id){
+    var it = A.ITEMS[id], c = document.createElement('canvas');
+    c.width = it.w + 2; c.height = it.h + 2;
+    A.sprite(c.getContext('2d'), it, 0, 0, 1000, data.variant[id], 0);
+    var k = Math.min(2, 48 / it.w, 30 / it.h);
+    c.style.width = Math.round(c.width * k) + 'px'; c.style.height = Math.round(c.height * k) + 'px';
+    return c;
+  }
+
+  function tray(){
+    var box = document.getElementById('deco-groups'); box.innerHTML = '';
+    var total = 0, have = 0;
+    ORDER.forEach(function(gm){
+      var ids = Object.keys(E.ITEMS).filter(function(id){ return E.ITEMS[id].game === gm; });
+      var got = ids.filter(owned).length; total += ids.length; have += got;
+      var grp = document.createElement('div'); grp.className = 'dgroup';
+      grp.style.setProperty('--accent', E.GAMES[gm].color);
+      var h = document.createElement('h3'); h.innerHTML = esc(E.GAMES[gm].name.toUpperCase()) + ' <span>' + got + '/' + ids.length + '</span>';
+      grp.appendChild(h);
+      ids.forEach(function(id){
+        var it = E.ITEMS[id], b = document.createElement('button'), th = document.createElement('span'), nm = document.createElement('span');
+        b.type = 'button'; b.className = 'ditem'; th.className = 'th'; nm.className = 'nm2';
+        if (owned(id)) {
+          th.appendChild(thumb(id));
+          nm.textContent = it.name;
+          var tg = document.createElement('span'), placed = slotOf(id), fresh = !data.seen[id];
+          tg.className = 'tg' + (fresh ? ' new' : '');
+          tg.textContent = fresh ? 'NEW' : (placed ? 'IN THE ROOM' : 'IN THE BOX');
+          nm.appendChild(tg);
+          if (sel === id) b.classList.add('sel');
+          b.setAttribute('aria-pressed', sel === id ? 'true' : 'false');
+          b.addEventListener('click', function(){ if (sel === id) { sel = null; idle(); tray(); labels(); } else pick(id); });
+        } else {
+          b.classList.add('locked'); b.setAttribute('aria-disabled', 'true');
+          th.textContent = '?';
+          nm.textContent = '???';
+          var tg2 = document.createElement('span'); tg2.className = 'tg'; tg2.textContent = it.hint.toUpperCase(); nm.appendChild(tg2);
+          b.addEventListener('click', function(){
+            sel = null; tray(); labels();
+            say('Still locked. <b>' + esc(it.hint) + '</b>' + (gm === 'room' ? '.' : ' in ' + esc(E.GAMES[gm].name) + '.'), false);
+          });
+        }
+        b.appendChild(th); b.appendChild(nm); grp.appendChild(b);
+      });
+      box.appendChild(grp);
+    });
+    document.getElementById('deco-count').innerHTML = '<b>' + have + '</b> / ' + total;
+  }
+
+  function openDeco(){
+    if (!deco.hidden) return;
+    opener = document.activeElement;
+    data = E.load(); sel = null;
+    roomUnlocks();
+    deco.hidden = false; root.classList.add('deco-open');
+    tray(); labels(); idle(); size();
+    document.getElementById('deco-done').focus({preventScroll:true});
+  }
+  function closeDeco(){
+    if (deco.hidden) return;
+    Object.keys(data.items).forEach(function(id){ data.seen[id] = 1; });
+    persist();
+    deco.hidden = true; root.classList.remove('deco-open'); sel = null;
+    refreshRoom();
+    var to = (opener && opener !== document.body && opener.focus && !opener.hidden) ? opener : document.getElementById('press');
+    to.focus({preventScroll:true});
+  }
+  document.getElementById('deco-done').addEventListener('click', closeDeco);
+  addEventListener('keydown', function(e){
+    if (deco.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); if (sel) { sel = null; idle(); tray(); labels(); } else closeDeco(); }
+    else if (e.key === 'Tab') {               // keep focus inside the dialog
+      var f = [].slice.call(deco.querySelectorAll('button:not([hidden])'));
+      var i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+
+  // room code: a copy of your items and layout you can carry to another browser
+  document.getElementById('deco-copy').addEventListener('click', function(){
+    var code = 'EMU1:' + btoa(unescape(encodeURIComponent(JSON.stringify({i:data.items, v:data.variant, l:data.layout}))));
+    var shown = function(){ window.prompt('Your room code. Copy it and keep it somewhere safe:', code); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(function(){ say('Room code copied.', false); }, shown);
+    else shown();
+  });
+  document.getElementById('deco-paste').addEventListener('click', function(){
+    var code = window.prompt('Paste a room code:');
+    if (!code) return;
+    try {
+      var o = JSON.parse(decodeURIComponent(escape(atob(code.trim().replace(/^EMU1:/, '')))));
+      var n = 0;
+      Object.keys(o.i || {}).forEach(function(id){ if (E.ITEMS[id] && !data.items[id]) { data.items[id] = o.i[id]; n++; } });
+      Object.keys(o.v || {}).forEach(function(id){ if (E.ITEMS[id]) data.variant[id] = String(o.v[id]); });
+      data.layout = {};
+      Object.keys(o.l || {}).forEach(function(k){ var s = slotById(k), it = A.ITEMS[o.l[k]]; if (s && A.fits(it, s) && data.items[o.l[k]]) data.layout[k] = o.l[k]; });
+      data.found = true; persist(); sel = null; tray(); labels();
+      say('Room loaded' + (n ? ', with ' + n + ' new ' + (n === 1 ? 'item.' : 'items.') : '.'), false);
+    } catch (e) { say('That code didn\'t work. Check it was copied whole.', false); }
+  });
+
+  // another tab (a game) unlocked something: pick it up
+  addEventListener('storage', function(e){
+    if (e.key !== E.KEY) return;
+    data = E.load(); refreshRoom();
+    if (!deco.hidden) { tray(); labels(); }
+  });
+
+  // ---- drawing ----
+  function dashed(c, x, y, w, h, col, ph){
+    c.fillStyle = col;
+    for (var i = 0; i < w; i++) if (((i + ph) >> 1) % 2 === 0) { c.fillRect(x + i, y, 1, 1); c.fillRect(x + w - 1 - i, y + h - 1, 1, 1); }
+    for (var j = 0; j < h; j++) if (((j + ph) >> 1) % 2 === 0) { c.fillRect(x + w - 1, y + j, 1, 1); c.fillRect(x, y + h - 1 - j, 1, 1); }
+  }
+  function drawDeco(t){
+    dg.clearRect(0, 0, 384, 216);
+    if (litImg.complete) dg.drawImage(litImg, 0, 0);
+    dg.fillStyle = 'rgba(0,8,16,.3)'; dg.fillRect(0, 0, 384, 216);
+    A.drawLayout(dg, data.layout, data.variant, t, 1);
+    var ph = (t / 120 | 0) % 4, pulse = .55 + .35 * Math.sin(t / 260);
+    A.SLOTS.forEach(function(s){
+      var x = Math.round(s.x - s.w / 2), y = (s.kind === 'top' || s.kind === 'floor') ? s.y - s.h : Math.round(s.y - s.h / 2);
+      var here = data.layout[s.id];
+      if (sel) {
+        if (here === sel) dashed(dg, x - 1, y - 1, s.w + 2, s.h + 2, '#ffb040', ph);
+        else if (A.fits(A.ITEMS[sel], s)) dashed(dg, x - 1, y - 1, s.w + 2, s.h + 2, 'rgba(110,240,255,' + pulse.toFixed(2) + ')', ph);
+      } else if (!here) dashed(dg, x - 1, y - 1, s.w + 2, s.h + 2, 'rgba(110,240,255,.35)', 0);
+      if (document.activeElement === slotBtns[s.id]) dashed(dg, x - 2, y - 2, s.w + 4, s.h + 4, '#ffffff', 0);
+    });
+  }
+  function lampNow(){ var v = parseFloat(stage.style.getPropertyValue('--lamp')); return isNaN(v) ? 1 : v; }
+  function drawRoom(t){
+    g.clearRect(0, 0, 384, 216);
+    A.drawLayout(g, data.layout, data.variant, t, lampNow());
+    var c = A.CRATE, tb = A.TOOLBOX;
+    if (!crateBtn.hidden) A.sprite(g, c, Math.round(c.x - c.w / 2), c.y - c.h, t, null, .3);
+    if (!toolBtn.hidden) A.sprite(g, tb, Math.round(tb.x - tb.w / 2), tb.y - tb.h, t, null, .3);
+    if (t - calFlash < 140) { g.fillStyle = 'rgba(255,255,255,.45)'; g.fillRect(135, 50, 17, 7); }
+  }
+  function loop(t){
+    if (!deco.hidden) drawDeco(t);
+    else if (!root.classList.contains('menu-open')) drawRoom(t);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  if (location.hash === '#room' && data.found) openDeco();
 })();
 </script>
 </body>
