@@ -194,15 +194,16 @@
     box-shadow:2px 2px 0 #000;cursor:pointer;white-space:nowrap}
   .deco-btn.ghost{background:transparent;color:#6ef0ff;border:2px solid #6ef0ff;box-shadow:none;padding:7px 9px}
   .deco-btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
-  .deco-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 18px}
-  .dgroup h3{font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1px;margin:0 0 6px;color:var(--accent)}
-  .dgroup h3 span{color:#5f8ea3}
+  .deco-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px 22px}
+  .dgroup h3{font-family:'Press Start 2P',monospace;font-size:9px;line-height:1.6;letter-spacing:1px;margin:0 0 10px;color:var(--accent)}
+  .dgroup h3 span{color:#5f8ea3;margin-left:8px;white-space:nowrap}
   .ditem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#0a141e;border:2px solid #16293a;
-    color:#dfe6ea;font-family:'VT323',ui-monospace,monospace;font-size:19px;line-height:1.1;padding:4px 8px 4px 4px;margin:0 0 5px;cursor:pointer;min-height:44px}
-  .ditem .th{flex:none;width:52px;height:34px;display:flex;align-items:center;justify-content:center;background:#04090f}
+    color:#dfe6ea;font-family:'VT323',ui-monospace,monospace;font-size:20px;line-height:1.15;padding:7px 12px 7px 7px;margin:0 0 9px;cursor:pointer;min-height:56px}
+  .ditem .th{flex:none;width:52px;height:38px;display:flex;align-items:center;justify-content:center;background:#04090f}
   .ditem canvas{image-rendering:pixelated;display:block}
   .ditem .nm2{flex:1;min-width:0}
-  .ditem .tg{display:block;font-family:'Press Start 2P',monospace;font-size:7px;color:#5f8ea3;margin-top:3px;letter-spacing:1px}
+  .ditem .tg{display:block;font-family:'Press Start 2P',monospace;font-size:7px;line-height:1.5;color:#5f8ea3;margin-top:6px;letter-spacing:1px}
+  .ditem .hn{display:block;font-size:18px;line-height:1.15;color:#7d93a3;margin-top:4px}
   .ditem .tg.new{color:#ffb040}
   .ditem:hover{border-color:#2c5a78}
   .ditem.sel{border-color:#ffb040;box-shadow:0 0 10px rgba(255,176,64,.45)}
@@ -214,10 +215,10 @@
     .deco-bar{font-size:8px;padding:8px 10px}
     .deco-tray{padding:8px 10px 12px}
     .deco-msgrow{margin:-8px -10px 8px;padding:8px 10px 6px;top:-8px}
-    .ditem .tg{font-size:6px}
-    .deco-groups{grid-template-columns:1fr 1fr;gap:10px 10px}
-    .ditem{font-size:17px;gap:6px}
+    .deco-groups{grid-template-columns:1fr 1fr;gap:16px 10px}
+    .ditem{font-size:18px;gap:8px;padding:7px 8px 7px 6px}
     .ditem .th{width:40px}
+    .ditem .hn{font-size:16px}
     .deco-msg{font-size:18px}
   }
   @media (prefers-reduced-motion:reduce){
@@ -777,7 +778,7 @@
           b.classList.add('locked'); b.setAttribute('aria-disabled', 'true');
           th.textContent = '?';
           nm.textContent = '???';
-          var tg2 = document.createElement('span'); tg2.className = 'tg'; tg2.textContent = it.hint.toUpperCase(); nm.appendChild(tg2);
+          var tg2 = document.createElement('span'); tg2.className = 'hn'; tg2.textContent = it.hint; nm.appendChild(tg2);
           b.addEventListener('click', function(){
             sel = null; tray(); labels();
             say('Still locked. <b>' + esc(it.hint) + '</b>' + (gm === 'room' ? '.' : ' in ' + esc(E.GAMES[gm].name) + '.'), false);
