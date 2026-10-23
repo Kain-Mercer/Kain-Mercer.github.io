@@ -120,6 +120,10 @@
   .tile.sel img,.nojs .tile:hover img{filter:none}
   .tile.sel .nm{color:var(--accent);text-shadow:0 0 8px var(--accent)}
   .tile.sel .p1{visibility:visible;animation:blink 1s steps(1) infinite}
+  .tile .mp{position:absolute;right:-7px;top:-7px;z-index:2;font-family:'Press Start 2P',monospace;font-size:10px;line-height:1;
+    background:#ffd23f;color:#2a0a00;padding:5px 5px 4px;border:2px solid #02060a;box-shadow:2px 2px 0 #000,0 0 10px rgba(255,210,63,.55)}
+  .tile.sel .mp{animation:mp2 .8s steps(1) infinite}
+  @keyframes mp2{50%{background:#ff4fa3;color:#fff;box-shadow:2px 2px 0 #000,0 0 12px rgba(255,79,163,.8)}}
   .tile:focus-visible{outline:2px dashed #fff;outline-offset:4px}
   .infos{margin-top:22px;border:2px solid #123247;background:rgba(3,12,20,.82);box-shadow:inset 0 0 0 2px #02060a}
   .js .infos{display:grid}
@@ -161,6 +165,7 @@
     .tile{border-width:2px;padding:4px}
     .tile .nm{font-size:8px;padding:7px 0 3px}
     .tile .p1{font-size:8px;top:-12px}
+    .tile .mp{font-size:8px;right:-6px;top:-6px;padding:4px 4px 3px}
     .infos{margin-top:16px}
     .info{padding:12px 12px 14px}
     .info h3{font-size:12px}
@@ -223,7 +228,7 @@
   }
   @media (prefers-reduced-motion:reduce){
     .stage.zoom,.stage.unzoom,.hud,.tile{transition:none}
-    .press,.gridbg,.tile.sel .p1{animation:none}
+    .press,.gridbg,.tile.sel .p1,.tile.sel .mp{animation:none}
     .js.menu-open .crt{animation:none}
     .flash.go{animation:none}
   }
@@ -283,7 +288,8 @@
         <img src="assets/sel-australia.png?v=1" alt="" width="80" height="48">
         <span class="nm">ACROSS COUNTRY</span></a></li>
       <li><a class="tile cos" href="across-cosmos/" data-i="3" aria-describedby="info-3">
-        <span class="p1" aria-hidden="true">1P ▶</span>
+        <span class="p1" aria-hidden="true">1-4P ▶</span>
+        <span class="mp" aria-hidden="true">MP</span>
         <img src="assets/sel-cosmos.png?v=1" alt="" width="80" height="48">
         <span class="nm">ACROSS COSMOS</span></a></li>
     </ul>
@@ -319,7 +325,7 @@
         </div>
       </article>
       <article class="info cos" id="info-3">
-        <span class="tag">SPACE VOYAGE</span>
+        <span class="tag">SPACE VOYAGE · 1-4P CO-OP</span>
         <h3>ACROSS COSMOS: ALPHA CENTAURI</h3>
         <p>Command the IASF-01 New Dawn across 4.37 light years. Keep the crew steady, trade and upgrade the ship, and fight only when you go looking for trouble.</p>
         <span class="ver">build 0.9.0 · walk the ship · co-op crew · plays on phones</span>
