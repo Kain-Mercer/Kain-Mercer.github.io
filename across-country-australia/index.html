@@ -1457,7 +1457,7 @@ const QUALITY_NUM = {common:2, uncommon:3, rare:4, epic:5, legendary:6};
 // Sell values raised 150% (2.5x) across the board - selling junk and duplicate gear is meant
 // to feel rewarding, not like scraping by. Buy prices at the trade post went up by the same
 // 2.5x so the sell/buy ratio (always ~3x) doesn't collapse into a buy-then-sell arbitrage loop.
-const SELL_VALUE = {common:13, uncommon:30, rare:75, epic:175, legendary:375};
+const SELL_VALUE = {common:14, uncommon:32, rare:79, epic:184, legendary:394}; // +5% on the old 13/30/75/175/375
 const BUY_PRICE  = {common:38, uncommon:90, rare:225, epic:525, legendary:1125};
 // Snacks now use the same quality/rarity tiers as gear (see the food items above) rather than a
 // separate system, so adding a new snack is just adding an ITEMS entry with a `quality` - no
@@ -2256,6 +2256,7 @@ const FUEL_PRICE_CITY_DISCOUNT = 0.25;   // real competition between multiple se
 const FUEL_PRICE_ROADHOUSE_PREMIUM = 0.15; // "only bowser for 200km" isolation tax
 const FUEL_CITY_STOPS = new Set(['Kalgoorlie-Boulder','Adelaide','Melbourne','Newman','Canberra']);
 
+const FUEL_PRICE_MULT = 0.95; // every bowser, both modes: 5% off the listed price
 function fuelPricePerUnit(stop){
   let price = FUEL_PRICE_BASE[stop.region] ?? 1.5;
   if(FUEL_CITY_STOPS.has(stop.name)) price -= FUEL_PRICE_CITY_DISCOUNT;
@@ -2266,7 +2267,7 @@ function fuelPricePerUnit(stop){
   price += ((hash % 11) - 5) / 100;
   price = Math.max(1.10, Math.round(price*100)/100);
   const veh = VEHICLES[state.vehicle] || VEHICLES.van;
-  return Math.max(0.50, Math.round(price * (veh.fuelPriceMult ?? 1) * 100) / 100);
+  return Math.max(0.50, Math.round(price * FUEL_PRICE_MULT * (veh.fuelPriceMult ?? 1) * 100) / 100);
 }
 
 const MEMORIES = [
@@ -2351,7 +2352,7 @@ let state = {
   servoSnackOffers: [],
   poiLocation: null,
 };
-const CLASSIC_PAID_START_CASH = 1800; // paid fuel for the whole Classic trip is roughly $2,300-2,900
+const CLASSIC_PAID_START_CASH = 2200; // paid fuel for the whole Classic trip is roughly $2,150-2,800
 let bestScore = null; // {days} - persisted separately, survives "New Delivery"
 
 /* ---------------- HELPERS ---------------- */
@@ -4621,7 +4622,7 @@ const NET_ROADHOUSE_RANGE_KM = 120; // pull in at a roadhouse once the tank gets
 function netFuelPrice(kind){
   let price = kind === 'capital' ? 1.45 : kind === 'roadhouse' ? 1.95 : 1.70;
   const veh = VEHICLES[state.vehicle] || VEHICLES.van;
-  return Math.max(0.50, Math.round(price * (veh.fuelPriceMult ?? 1) * 100) / 100);
+  return Math.max(0.50, Math.round(price * FUEL_PRICE_MULT * (veh.fuelPriceMult ?? 1) * 100) / 100);
 }
 // Returns litres put in the tank. `where` is the place name for the log.
 function netRefuel(kind, where){
