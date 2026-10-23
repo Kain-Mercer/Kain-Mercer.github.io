@@ -577,6 +577,12 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
 .jobCard.accepted .jcActions{ display:none; }
 .jobsFooter{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:10px; }
 .jobsFooterCount{ color:var(--muted); font-size:0.85em; }
+.jobsFooterCount.warn{ color: var(--ember); }
+.jcWarn{ color: var(--ember); }
+@keyframes acShake{ 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+.shake{ animation: acShake 0.4s ease; }
+.gpsSideBtns{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.gpsSideBtns button{ flex:1; min-width:120px; }
 
 /* Mobile: app-card skin. Same DOM, different chrome - senders hide (an app doesn't show
    "From"), cards get a tighter gig-app look, actions go full-width and stacked. */
@@ -601,7 +607,9 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
 }
 
 /* door note - a second, hastier note pinned to Mallacoota's front door */
-.modalOverlay.doorNoteOverlay{ z-index:60; } /* opens together with the Mallacoota servo, so it has to sit on top */
+.modalOverlay.doorNoteOverlay{ z-index:60; }
+/* Network mode opens these from the GPS map, so they have to sit above it */
+#loadoutOverlay, #roadhouseOverlay{ z-index:55; } /* opens together with the Mallacoota servo, so it has to sit on top */
 .doorNoteOverlay .modal.doorNoteModal{
   background: transparent; border:none; box-shadow:none; padding:0; max-width:400px;
   max-height:none; overflow:visible;
@@ -1018,7 +1026,7 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
 <div class="modalOverlay" id="setupOverlay">
   <div class="modal setupModal">
     <h2 class="setupTitle">Before you hit the road</h2>
-    <p class="setupSub">A delivery from Dampier, WA to Mallacoota, VIC. Who's driving?</p>
+    <p class="setupSub" id="setupSub">A delivery from Dampier, WA to Mallacoota, VIC. Who's driving?</p>
 
     <label class="setupLabel">Delivery Mode</label>
     <div class="choicePills" id="modePills">
@@ -1115,6 +1123,10 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
         <button class="setupStartBtn" id="gpsDriveBtn" style="width:auto; padding:10px 20px; background:linear-gradient(180deg,#78c88c,#4f9c68);">Drive on</button>
         <button class="setupStartBtn" id="gpsMoreJobsBtn" style="width:auto; padding:10px 20px;">More jobs from here</button>
       </div>
+    </div>
+    <div class="gpsSideBtns">
+      <button class="headerbtn" id="gpsInventoryBtn">&#127890; Inventory</button>
+      <button class="headerbtn" id="gpsShopBtn" style="display:none;">&#9981; Shop</button>
     </div>
   </div>
 </div>
@@ -1224,8 +1236,10 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
     <p class="sub" id="rhBlurb"></p>
     <p class="special" id="rhSpecial" style="display:none;"></p>
     <div class="refuelnote" id="rhRefuelNote">&#9981; Topped up for free, tank and jerry can both - the road's long enough without worrying about the bowser.</div>
+    <div id="rhFuelSection">
     <h2 style="font-size:0.9rem;">Fuel</h2>
     <div id="rhFuel" style="margin-bottom:14px;"></div>
+    </div>
     <h2 style="font-size:0.9rem;">Sell from the <span id="rhSellNoun">van</span> <small id="rhCash"></small></h2>
     <button class="sellAllBtn" id="rhSellAllJunk" onclick="sellAllJunk()">🗑️ Sell all Junk</button>
     <div class="invgrid noscroll" id="rhSell" style="margin-bottom:14px;"></div>
@@ -2337,6 +2351,7 @@ let state = {
   servoSnackOffers: [],
   poiLocation: null,
 };
+const CLASSIC_PAID_START_CASH = 1800; // paid fuel for the whole Classic trip is roughly $2,300-2,900
 let bestScore = null; // {days} - persisted separately, survives "New Delivery"
 
 /* ---------------- HELPERS ---------------- */
@@ -3153,6 +3168,7 @@ function callRoadsideAssist(){
   pushLog(cost > 0
     ? `They tow you all the way in to <strong>${next.name}</strong>, and take <span style="color:var(--gold)">$${cost}</span> for the call-out.`
     : `They tow you all the way in to <strong>${next.name}</strong> - no charge, just a day lost sitting on the shoulder waiting for them.`, 'event');
+  if(!state.cozyMode && cost === 0) pushLog(`Dispatch won't front any more fuel money. Sell what you can at the next stop.`, 'event');
 
   state.atServo = false;
   state.servoStopIdx = null;
@@ -3496,6 +3512,7 @@ function openServoModal(stop){
   } else {
     spEl.style.display = 'none';
   }
+  document.getElementById('rhFuelSection').style.display = '';
   renderRoadhouseSell();
   renderRoadhouseShop();
   renderRoadhouseFuel();
@@ -4386,12 +4403,25 @@ function netChainKmTo(job){
     state.activeDeliveries = saved;
   }
 }
-// Pay for a drop-off: full on time, 20% less for each day late, never below 30%.
-function netPayFor(job){
-  if(!job.dueDay || state.day <= job.dueDay) return { pay: job.reward, late: 0 };
-  const late = state.day - job.dueDay;
-  return { pay: Math.round(job.reward * Math.max(0.3, 1 - 0.2*late)), late };
+// 25% of the reward is paid when the cargo is picked up, so a long job pays for its fuel.
+const NET_ADVANCE_PCT = 0.25;
+function netPayAdvance(job, city){
+  if(job.advance != null) return;
+  job.advance = Math.round(job.reward * NET_ADVANCE_PCT);
+  state.cash += job.advance;
+  pushLog(`\u{1F4B5} Dispatch pays <span style="color:var(--gold)">$${job.advance}</span> up front for the ${job.cargo.toLowerCase()} from ${city}.`, 'event');
 }
+// Pay for a drop-off: the rest of the reward, full on time, 20% less for each day late, never
+// below 30%. Lateness only cuts the part paid on delivery, not the advance.
+function netPayFor(job){
+  const rest = job.reward - (job.advance || 0);
+  if(!job.dueDay || state.day <= job.dueDay) return { pay: rest, late: 0 };
+  const late = state.day - job.dueDay;
+  return { pay: Math.round(rest * Math.max(0.3, 1 - 0.2*late)), late };
+}
+// Season days run from seasonStartDay (1 for a fresh game; later for an old save moved onto seasons).
+function netSeasonLastDay(){ return (state.seasonStartDay || 1) + NET_SEASON_DAYS - 1; }
+function netSeasonDay(){ return state.day - (state.seasonStartDay || 1) + 1; }
 function netGenerateJobOffers(originCity, count){
   count = count || 4;
   netSyncJobIdCounter();
@@ -4431,6 +4461,7 @@ function showCapitalPicker(){
     btn.onclick = () => {
       closeOverlay('capitalPickerOverlay');
       state.networkCity = btn.dataset.city;
+      netStockTownShop(state.networkCity);
       saveGame();
       showJobOffers(state.networkCity);
     };
@@ -4438,6 +4469,15 @@ function showCapitalPicker(){
   openOverlay('capitalPickerOverlay');
 }
 
+// Offer due text, capped at the season's last day. Warns when the drive can't fit in the season.
+function netOfferDueText(job){
+  if(state.seasonOver) return `Due in ${job.deadlineDays}d`;
+  const last = netSeasonLastDay();
+  const needDays = Math.ceil(netChainKmTo(job) / netKmPerDay());
+  if(state.day + needDays > last) return `<span class="jcWarn">Won't make it this season</span>`;
+  const due = Math.min(state.day + job.deadlineDays, last);
+  return `Due day ${due}`;
+}
 function renderJobCard(job){
   const acceptedCls = job.accepted ? ' accepted' : '';
   return `
@@ -4449,8 +4489,9 @@ function renderJobCard(job){
       <div class="jcMeta">
         <span>${job.cargo}</span>
         <span>${fmtKm(job.distanceKm)} km</span>
-        <span>${job.accepted ? `Due day ${job.dueDay}` : `Due in ${job.deadlineDays}d`}</span>
+        <span>${job.accepted ? `Due day ${job.dueDay}` : netOfferDueText(job)}</span>
         <span class="jcReward">$${job.reward}</span>
+        <span>25% on pickup</span>
       </div>
       <div class="jcActions">
         <button class="jcBtn decline" data-action="decline" data-job="${job.id}">Decline</button>
@@ -4475,7 +4516,8 @@ function renderJobOfferList(){
       if(btn.dataset.action === 'accept'){
         job.accepted = true;
         job.dueDay = state.day + job.deadlineDays;
-        if(job.origin === state.networkCity) job.pickedUp = true;
+        if(!state.seasonOver) job.dueDay = Math.min(job.dueDay, netSeasonLastDay());
+        if(job.origin === state.networkCity){ job.pickedUp = true; netPayAdvance(job, job.origin); }
         state.activeDeliveries.push(job);
       } else {
         netCurrentOffers = netCurrentOffers.filter(j => j.id !== jobId);
@@ -4489,6 +4531,7 @@ function renderJobOfferList(){
 
 function updateJobsFooter(){
   document.getElementById('jobsCash').textContent = `$${state.cash} cash`;
+  document.getElementById('jobsFooterCount').classList.remove('warn');
   const acceptedCount = state.activeDeliveries.length;
   document.getElementById('jobsFooterCount').textContent =
     acceptedCount === 0 ? 'No deliveries accepted yet' :
@@ -4552,6 +4595,7 @@ function netSettleHere(){
     if(ev.type === 'pickup'){
       ev.job.pickedUp = true;
       pushLog(`\u{1F4E6} Picked up cargo in <strong>${here.city}</strong>: ${ev.job.cargo}.`, 'event');
+      netPayAdvance(ev.job, here.city);
     } else {
       const { pay, late } = netPayFor(ev.job);
       state.cash += pay;
@@ -4561,9 +4605,10 @@ function netSettleHere(){
         state.netStats.delivered += 1;
         if(!late) state.netStats.onTime += 1;
       }
+      if(window.EmuSoft) EmuSoft.unlock('aca.sign'); // first Network delivery earns the road sign
       pushLog(late
         ? `\u2705 Delivered to <strong>${here.city}</strong>, ${late} day${late===1?'':'s'} late. Pay docked to <span style="color:var(--gold)">$${pay}</span> (was $${ev.job.reward}).`
-        : `\u2705 Delivered to <strong>${here.city}</strong> on time. Paid <span style="color:var(--gold)">$${pay}</span>.`, 'event');
+        : `\u2705 Delivered to <strong>${here.city}</strong> on time. Paid <span style="color:var(--gold)">$${pay}</span>${ev.job.advance ? ` (plus $${ev.job.advance} up front)` : ''}.`, 'event');
     }
     changed = true;
   }
@@ -4620,10 +4665,24 @@ async function loadNetBest(){
 }
 // Call after each day change. Shows the end screen once the last day has been driven.
 function netCheckSeasonEnd(){
-  if(state.deliveryMode !== 'network' || state.seasonOver || state.day <= NET_SEASON_DAYS) return false;
+  if(state.deliveryMode !== 'network' || state.seasonOver || state.day <= netSeasonLastDay()) return false;
   state.seasonOver = true;
+  if(window.EmuSoft) EmuSoft.unlock('aca.rig'); // finishing a season earns the rig model
+  // Jobs still on the books when the season closes go back to Dispatch.
+  const unfinished = (state.activeDeliveries || []).length;
+  if(unfinished){
+    // Advances on undelivered jobs go back too, so taking jobs you can't finish can't pad the score.
+    const clawback = state.activeDeliveries.reduce((sum, j) => sum + (j.advance || 0), 0);
+    if(clawback){
+      state.cash -= clawback;
+      pushLog(`Dispatch takes back <span style="color:var(--gold)">$${clawback}</span> in advances for work that wasn't delivered.`, 'event');
+    }
+    state.activeDeliveries = [];
+    pushLog(`${unfinished} unfinished job${unfinished===1?'':'s'} handed back to Dispatch at the end of the season.`, 'event');
+    if(document.getElementById('gpsMapOverlay').classList.contains('show')) renderGpsMap(false);
+  }
   const stats = state.netStats || { delivered:0, onTime:0 };
-  const profit = state.cash - NET_START_CASH;
+  const profit = state.cash - (state.seasonStartCash ?? NET_START_CASH);
   const run = { profit, delivered: stats.delivered, onTime: stats.onTime };
   const isBest = !netBest || profit > netBest.profit;
   const prevBest = netBest;
@@ -4687,6 +4746,7 @@ function netCallRoadsideAssist(){
   state.fuel = currentMaxFuel();
   state.energy = Math.round(currentPerf().maxEnergy * getTier(currentComfort()).energyPct);
   netSettleHere(); // the tow still counts as arriving - pickups and drop-offs happen here
+  netStockTownShop(nextNode);
   saveGame();
   renderGpsHud();
   renderGpsMap(false);
@@ -4769,6 +4829,7 @@ function driveNetworkStep(){
     state.networkLegKm = 0;
     netSettleHere();
     netRefuel(NET_NODES[nextNode].capital ? 'capital' : 'town', nextNode);
+    netStockTownShop(nextNode);
   } else if(state.hour >= DAY_END_HOUR - 0.001){
     pushLog("The sun's going down. Time to make camp for the night.", 'event');
     netMakeCamp();
@@ -4786,7 +4847,7 @@ function renderGpsHud(){
   const detailed = netDetailedPath();
   const done = detailed.length < 2;
   hud.innerHTML = `
-    <span>Day ${state.day}${state.seasonOver ? '' : ` of ${NET_SEASON_DAYS}`} \u00b7 ${fmtHour(state.hour)}</span>
+    <span>Day ${state.seasonOver ? state.day : `${netSeasonDay()} of ${NET_SEASON_DAYS}`} \u00b7 ${fmtHour(state.hour)}</span>
     <span>\u26FD ${Math.round(state.fuel)}</span>
     <span>\u{1F50B} ${Math.round(state.energy)}</span>
     <span>\u{1F4B5} $${state.cash}</span>
@@ -4794,15 +4855,20 @@ function renderGpsHud(){
   const driveBtn = document.getElementById('gpsDriveBtn');
   if(driveBtn) driveBtn.textContent = done ? 'No deliveries queued' : 'Drive on';
   if(driveBtn) driveBtn.disabled = done;
+  updateGpsSideButtons();
 }
 
 document.getElementById('jobsContinueBtn').addEventListener('click', () => {
-  closeOverlay('jobsOverlay');
   if(state.activeDeliveries.length === 0){
-    alert(`No deliveries accepted yet. Staying in ${state.networkCity} - open the jobs list again to pick some up.`);
-    showJobOffers(state.networkCity);
+    // Nothing to drive to yet: say so in the panel instead of a browser popup.
+    const count = document.getElementById('jobsFooterCount');
+    count.textContent = 'Accept at least one job to hit the road.';
+    count.classList.add('warn');
+    const btn = document.getElementById('jobsContinueBtn');
+    btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake');
     return;
   }
+  closeOverlay('jobsOverlay');
   const morph = gpsReturnToMapAfterJobs;
   gpsReturnToMapAfterJobs = false;
   openGpsMap(morph);
@@ -4937,6 +5003,47 @@ function renderGpsMap(morph){
     : 'No deliveries queued yet';
 }
 
+// ---- Network: a shop in every town, the same servo shop as Classic ----
+// Stocked once per arrival; netShopCity says which town the stock belongs to.
+function netStockTownShop(city){
+  state.netShopCity = city;
+  state.servoOffers = generateShopOffers();
+  state.servoSnackOffers = generateSnackOffers();
+}
+function netShopAvailable(){
+  return state.deliveryMode === 'network' && state.netShopCity && state.netShopCity === state.networkCity && !(state.networkLegKm > 0.001);
+}
+function updateGpsSideButtons(){
+  const shopBtn = document.getElementById('gpsShopBtn');
+  if(!shopBtn) return;
+  const ok = netShopAvailable();
+  shopBtn.style.display = ok ? '' : 'none';
+  if(ok) shopBtn.textContent = `\u26FD Shop in ${state.networkCity}`;
+}
+function openNetTownShop(){
+  if(!netShopAvailable()) return;
+  const city = state.networkCity;
+  rhShopTab = 'equip';
+  document.getElementById('rhName').textContent = servoLabel(city);
+  document.getElementById('rhBlurb').textContent = NET_NODES[city].capital
+    ? `A big-city servo on the way out of ${city}. Everything costs a bit more than it should.`
+    : `The servo on the main street of ${city}. Somebody's dog is asleep by the ice freezer.`;
+  document.getElementById('rhSpecial').style.display = 'none';
+  document.getElementById('rhRefuelNote').textContent = state.cozyMode
+    ? '\u26FD Fuel is free and topped up automatically when you roll into town.'
+    : `\u26FD Fuel is bought automatically when you roll into town - $${netFuelPrice(NET_NODES[city].capital ? 'capital' : 'town').toFixed(2)}/L here.`;
+  document.getElementById('rhFuelSection').style.display = 'none';
+  renderRoadhouseSell();
+  renderRoadhouseShop();
+  openOverlay('roadhouseOverlay');
+}
+document.getElementById('gpsShopBtn').addEventListener('click', openNetTownShop);
+document.getElementById('gpsInventoryBtn').addEventListener('click', ()=> showLoadout('interior'));
+// Closing the shop or inventory from the map refreshes the HUD (cash, energy from snacks).
+['rhClose','loadoutClose'].forEach(id => document.getElementById(id).addEventListener('click', ()=>{
+  if(document.getElementById('gpsMapOverlay').classList.contains('show')) renderGpsHud();
+}));
+
 function openGpsMap(morph){
   if(netSettleHere()) saveGame(); // clears anything due here, incl. jobs stuck in older saves
   renderGpsMap(!!morph);
@@ -5035,12 +5142,19 @@ document.getElementById('gpsMoreJobsBtn').addEventListener('click', ()=>{
   showJobOffers(fromCity);
 });
 
+function updateSetupSub(){
+  document.getElementById('setupSub').textContent = setupChoice.mode === 'network'
+    ? "Pick a capital and take jobs across Australia. Who's driving?"
+    : "A delivery from Dampier, WA to Mallacoota, VIC. Who's driving?";
+}
+document.getElementById('modePills').addEventListener('click', ()=> setTimeout(updateSetupSub, 0));
 function showSetup(){
   setupChoice = { gender:'Man', vehicle:'van', pet:'dog', cozyMode:true, mode:'classic' };
   document.getElementById('setupName').value = '';
   document.getElementById('setupCompany').value = '';
   renderVehicleGrid();
   wirePillGroup('modePills', 'mode', 'classic');
+  updateSetupSub();
   wirePillGroup('genderPills', 'gender', 'Man');
   wirePillGroup('petPills', 'pet', 'dog');
   updateCozyToggleUI();
@@ -5064,6 +5178,10 @@ document.getElementById('setupStartBtn').addEventListener('click', ()=>{
   state.deliveryMode = setupChoice.mode;
   state.netStats = { delivered:0, onTime:0 };
   state.seasonOver = false;
+  state.seasonStartDay = state.day;
+  state.seasonStartCash = NET_START_CASH;
+  // Paid fuel on the Classic route costs far more than $500, so Dispatch fronts the difference.
+  state.cash = (state.deliveryMode === 'classic' && !state.cozyMode) ? CLASSIC_PAID_START_CASH : 500;
   document.getElementById('headerSub').textContent = currentHeaderSub();
   document.getElementById('footerNote').textContent = currentFooterIntro();
   closeOverlay('setupOverlay');
@@ -5222,6 +5340,7 @@ document.getElementById('introBtn').addEventListener('click', ()=>{
 function beginJourney(){
   generateDailyLocations();
   const noun = vehicleNoun((VEHICLES[state.vehicle] || VEHICLES.van).id);
+  if(!state.cozyMode) pushLog(`\u{1F4B5} Dispatch sends a <span style="color:var(--gold)">$${(CLASSIC_PAID_START_CASH-500).toLocaleString()}</span> fuel advance. Make it last.`, 'event');
   pushLog(`The road brought you here. No stove, no bed, just the dirt and the dark of the ${noun}. ${fmtKm(MALLACOOTA_DISTANCE)} km to Mallacoota, and the next roadhouse is ${fmtKm(getNextStop(0).cumEnd)} km up the road.`, 'event');
   render();
   saveGame();
@@ -5248,7 +5367,8 @@ async function saveGame(){
       poiLocation: state.poiLocation,
       deliveryMode: state.deliveryMode, networkCity: state.networkCity,
       activeDeliveries: state.activeDeliveries, networkLegKm: state.networkLegKm,
-      netStats: state.netStats, seasonOver: state.seasonOver,
+      netStats: state.netStats, seasonOver: state.seasonOver, seasonStartDay: state.seasonStartDay,
+      netShopCity: state.netShopCity, seasonStartCash: state.seasonStartCash,
       log: state.log.slice(0,25),
     };
     await window.storage.set(SAVE_KEY, JSON.stringify(data));
@@ -5260,6 +5380,13 @@ async function loadGame(){
     if(res && res.value){
       const data = JSON.parse(res.value);
       Object.assign(state, data);
+      // A Network save from before seasons existed: start a fresh 30-day season from today.
+      if(data.deliveryMode === 'network' && !data.netStats){
+        state.seasonStartDay = state.day;
+        state.seasonStartCash = state.cash;
+        state.netStats = { delivered:0, onTime:0 };
+        state.seasonOver = false;
+      }
       return true;
     }
   }catch(e){ /* no save yet, fine */ }
@@ -5310,7 +5437,7 @@ async function resetRun(){
     perfectAchieved:false, distanceTraveled:0, arrived:false, arrivalCelebrated:false, runId:null,
     atServo:false, servoStopIdx:null, servoOffers:[], servoSnackOffers:[], poiLocation:null,
     deliveryMode:'classic', networkCity:null, activeDeliveries:[], networkLegKm:0,
-    netStats:{ delivered:0, onTime:0 }, seasonOver:false,
+    netStats:{ delivered:0, onTime:0 }, seasonOver:false, seasonStartDay:1, seasonStartCash:NET_START_CASH, netShopCity:null,
   });
   hideBanner();
   clearAllExploreToasts();
@@ -5350,7 +5477,7 @@ document.getElementById('servoBtn').addEventListener('click', reopenServo);
       if(!state.networkCity || !(state.networkCity in NET_NODES)) showCapitalPicker();
       else if(!state.activeDeliveries || state.activeDeliveries.length === 0) showJobOffers(state.networkCity);
       else openGpsMap(false);
-      document.getElementById('footerNote').textContent = `day ${state.day} of ${NET_SEASON_DAYS} · ${state.networkCity || 'no base yet'} · $${state.cash}`;
+      document.getElementById('footerNote').textContent = `day ${netSeasonDay()} of ${NET_SEASON_DAYS} · ${state.networkCity || 'no base yet'} · $${state.cash}`;
       netCheckSeasonEnd();
     } else if(state.arrived && !state.arrivalCelebrated){ showArrival(); }
   } else {

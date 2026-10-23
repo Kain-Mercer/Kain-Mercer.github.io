@@ -59,7 +59,9 @@
     showing = true;
     var el = document.createElement('div');
     el.setAttribute('role', 'status');
-    el.style.cssText = 'position:fixed;left:50%;top:14px;z-index:2147483647;transform:translate(-50%,-140%);' +
+    // On phones the card slides up from the bottom, so it doesn't cover the top of pop-ups.
+    var low = window.innerWidth < 600, hide = low ? 'translate(-50%,140%)' : 'translate(-50%,-140%)';
+    el.style.cssText = 'position:fixed;left:50%;' + (low ? 'bottom:14px;' : 'top:14px;') + 'z-index:2147483647;transform:' + hide + ';' +
       'transition:transform .35s cubic-bezier(.2,.8,.3,1.2);pointer-events:none;max-width:calc(100vw - 24px);' +
       'background:#06080d;color:#e8e6df;border:2px solid ' + t[2] + ';box-shadow:3px 3px 0 #000,0 0 16px ' + t[2] + '66;' +
       'padding:9px 12px 10px;font:10px/1.6 "Press Start 2P",ui-monospace,monospace;letter-spacing:.5px;text-align:center';
@@ -71,7 +73,7 @@
     el.appendChild(a); el.appendChild(b);
     document.body.appendChild(el);
     requestAnimationFrame(function () { requestAnimationFrame(function () { el.style.transform = 'translate(-50%,0)'; }); });
-    setTimeout(function () { el.style.transform = 'translate(-50%,-140%)'; }, 3200);
+    setTimeout(function () { el.style.transform = hide; }, 3200);
     setTimeout(function () { el.remove(); next(); }, 3700);
   }
 
