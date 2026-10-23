@@ -4443,34 +4443,86 @@ function netEdgeKm(a, b){
   return edge ? edge.km : null;
 }
 
-// Flattens the planned chain into a stop-by-stop path, tagging each stop with a pickup/
-// dropoff event where relevant. This is what both the driving loop and the HUD read from.
+// Flattens the planned chain into a stop-by-stop path. Each stop carries a list of pickup/
+// dropoff events, so two jobs can finish in the same town, or a pickup can happen where
+// the last job was dropped off. Events on stop 0 (the town you're in) are settled straight
+// away by netSettleHere(). This is what both the driving loop and the HUD read from.
 function netDetailedPath(){
   let cur = state.networkCity;
-  const result = [{ city: cur, event: null }];
+  const result = [{ city: cur, events: [] }];
+  const addLeg = (to) => {
+    const leg = netShortestPath(cur, to);
+    if(leg){ for(const n of leg.path.slice(1)) result.push({ city: n, events: [] }); }
+    cur = to;
+  };
   for(const job of state.activeDeliveries){
     if(!job.pickedUp){
-      if(job.origin !== cur){
-        const leg1 = netShortestPath(cur, job.origin);
-        if(leg1){
-          for(const n of leg1.path.slice(1)){
-            result.push({ city: n, event: n === job.origin ? { type:'pickup', job } : null });
-          }
-        }
-        cur = job.origin;
-      } else if(result[result.length-1].city === job.origin && !result[result.length-1].event){
-        result[result.length-1].event = { type:'pickup', job };
-      }
+      addLeg(job.origin);
+      result[result.length-1].events.push({ type:'pickup', job });
     }
-    const leg2 = netShortestPath(cur, job.destination);
-    if(leg2){
-      for(const n of leg2.path.slice(1)){
-        result.push({ city: n, event: n === job.destination ? { type:'dropoff', job } : null });
-      }
-    }
-    cur = job.destination;
+    addLeg(job.destination);
+    result[result.length-1].events.push({ type:'dropoff', job });
   }
   return result;
+}
+
+// Handles every pickup and dropoff due in the town you're standing in. Called on each
+// arrival (driven or towed) and before each drive, so a job can never get stuck waiting
+// for a town you're already in.
+function netSettleHere(){
+  const here = netDetailedPath()[0];
+  let changed = false;
+  for(const ev of here.events){
+    if(ev.type === 'pickup'){
+      ev.job.pickedUp = true;
+      pushLog(`\u{1F4E6} Picked up cargo in <strong>${here.city}</strong>: ${ev.job.cargo}.`, 'event');
+    } else {
+      state.cash += ev.job.reward;
+      state.activeDeliveries = state.activeDeliveries.filter(j => j.id !== ev.job.id);
+      pushLog(`\u2705 Delivered to <strong>${here.city}</strong>. Paid <span style="color:var(--gold)">$${ev.job.reward}</span>.`, 'event');
+    }
+    changed = true;
+  }
+  return changed;
+}
+
+// Fuel in Network mode. Towns and highway roadhouses both have a bowser. Cozy mode fills
+// up for free, same as Classic; otherwise you pay per litre out of what the jobs earn.
+const NET_ROADHOUSE_RANGE_KM = 120; // pull in at a roadhouse once the tank gets this low
+function netFuelPrice(kind){
+  let price = kind === 'capital' ? 1.45 : kind === 'roadhouse' ? 1.95 : 1.70;
+  const veh = VEHICLES[state.vehicle] || VEHICLES.van;
+  return Math.max(0.50, Math.round(price * (veh.fuelPriceMult ?? 1) * 100) / 100);
+}
+// Returns litres put in the tank. `where` is the place name for the log.
+function netRefuel(kind, where){
+  const max = currentMaxFuel();
+  const room = Math.max(0, max - state.fuel);
+  const jRoom = state.jerryCanFound ? Math.max(0, JERRY_CAN_CAPACITY - state.jerryCanFuel) : 0;
+  if(room < 0.5 && jRoom < 0.5) return 0;
+  if(state.cozyMode){
+    state.fuel = max;
+    if(state.jerryCanFound) state.jerryCanFuel = JERRY_CAN_CAPACITY;
+    pushLog(`\u26FD You top up ${jRoom >= 0.5 ? 'the tank and the jerry can' : 'the tank'} at ${where} - no charge, same as always.`, 'event');
+    return room;
+  }
+  const price = netFuelPrice(kind);
+  const tankUnits = Math.min(room, Math.floor(state.cash / price));
+  const jerryUnits = Math.min(jRoom, Math.floor((state.cash - tankUnits*price) / price));
+  const units = Math.max(0, tankUnits) + Math.max(0, jerryUnits);
+  if(units < 0.5){
+    pushLog(`Not enough cash for fuel at ${where}.`, 'event');
+    return 0;
+  }
+  const cost = Math.max(1, Math.min(state.cash, Math.round(units*price)));
+  state.cash -= cost;
+  state.fuel = Math.min(max, state.fuel + Math.max(0, tankUnits));
+  if(jerryUnits > 0) state.jerryCanFuel = Math.min(JERRY_CAN_CAPACITY, state.jerryCanFuel + jerryUnits);
+  pushLog(`\u26FD You buy <strong>${Math.round(units)}L</strong> at ${where}, <strong>$${price.toFixed(2)}/L</strong> - <span style="color:var(--gold)">$${cost}</span>.`, 'event');
+  return Math.max(0, tankUnits);
+}
+function netCanAffordFuel(kind){
+  return state.cozyMode || state.cash >= netFuelPrice(kind);
 }
 
 function netMakeCamp(){
@@ -4501,6 +4553,7 @@ function netCallRoadsideAssist(){
   state.hour = DAY_START_HOUR;
   state.fuel = currentMaxFuel();
   state.energy = Math.round(currentPerf().maxEnergy * getTier(currentComfort()).energyPct);
+  netSettleHere(); // the tow still counts as arriving - pickups and drop-offs happen here
   saveGame();
   renderGpsHud();
   renderGpsMap(false);
@@ -4522,6 +4575,7 @@ function updateGpsPlayerMarker(){
 }
 
 function driveNetworkStep(){
+  if(netSettleHere()){ saveGame(); renderGpsMap(false); }
   const detailed = netDetailedPath();
   if(detailed.length < 2){
     pushLog('No planned deliveries left. Use "More jobs from here" to pick up new work.', 'event');
@@ -4542,7 +4596,20 @@ function driveNetworkStep(){
   const maxKmByEnergy = state.energy / energyPerKm;
   const maxKmByFuel = state.fuel / fuelPerKm;
 
-  if(maxKmByFuel < 1){ netCallRoadsideAssist(); return; }
+  // Not enough in the tank to reach the next town: use the jerry can, then pull in at
+  // the next roadhouse. The tow is only for when there's no money left for fuel.
+  if(maxKmByFuel < distToNext && maxKmByFuel < NET_ROADHOUSE_RANGE_KM){
+    let stopped = false;
+    if(state.jerryCanFound && state.jerryCanFuel > 0.5 && state.fuel < currentMaxFuel() - 0.5){
+      pourJerryCan();
+      stopped = true;
+    } else if(netCanAffordFuel('roadhouse') && netRefuel('roadhouse', `a roadhouse on the way to ${nextNode}`) > 0.5){
+      state.hour = Math.min(DAY_END_HOUR, state.hour + 0.5);
+      stopped = true;
+    }
+    if(stopped){ saveGame(); renderGpsHud(); return; }
+  }
+  if(state.fuel / fuelPerKm < 1){ netCallRoadsideAssist(); return; }
   if(maxKmByEnergy < 1){
     pushLog("You're too worn out to keep driving. Time to make camp for the night.", 'event');
     netMakeCamp();
@@ -4566,15 +4633,8 @@ function driveNetworkStep(){
     nodeArrived = true;
     state.networkCity = nextNode;
     state.networkLegKm = 0;
-    const event = detailed[1].event;
-    if(event && event.type === 'pickup'){
-      event.job.pickedUp = true;
-      pushLog(`\u{1F4E6} Picked up cargo in <strong>${nextNode}</strong>: ${event.job.cargo}.`, 'event');
-    } else if(event && event.type === 'dropoff'){
-      state.cash += event.job.reward;
-      state.activeDeliveries = state.activeDeliveries.filter(j => j.id !== event.job.id);
-      pushLog(`\u2705 Delivered to <strong>${nextNode}</strong>. Paid <span style="color:var(--gold)">$${event.job.reward}</span>.`, 'event');
-    }
+    netSettleHere();
+    netRefuel(NET_NODES[nextNode].capital ? 'capital' : 'town', nextNode);
   } else if(state.hour >= DAY_END_HOUR - 0.001){
     pushLog("The sun's going down. Time to make camp for the night.", 'event');
     netMakeCamp();
@@ -4744,6 +4804,7 @@ function renderGpsMap(morph){
 }
 
 function openGpsMap(morph){
+  if(netSettleHere()) saveGame(); // clears anything due here, incl. jobs stuck in older saves
   renderGpsMap(!!morph);
   renderGpsHud();
   openOverlay('gpsMapOverlay');
@@ -5139,7 +5200,12 @@ document.getElementById('servoBtn').addEventListener('click', reopenServo);
     pushLog(`You climb back into the ${noun}. Everything's more or less how you left it.`, 'event');
     document.getElementById('footerNote').textContent = `day ${state.day} · ${fmtKm(state.distanceTraveled)}/${fmtKm(TOTAL_DISTANCE)} km · best streak ${state.bestStreak} · $${state.cash}`;
     render();
-    if(state.arrived && !state.arrivalCelebrated){ showArrival(); }
+    if(state.deliveryMode === 'network'){
+      // Network runs live in the overlays, so put the player back where they were.
+      if(!state.networkCity || !(state.networkCity in NET_NODES)) showCapitalPicker();
+      else if(!state.activeDeliveries || state.activeDeliveries.length === 0) showJobOffers(state.networkCity);
+      else openGpsMap(false);
+    } else if(state.arrived && !state.arrivalCelebrated){ showArrival(); }
   } else {
     render();
     showSetup();
