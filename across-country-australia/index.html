@@ -1140,6 +1140,23 @@ footer{ text-align:center; margin-top:24px; color: var(--muted); font-size:0.7re
   </div>
 </div>
 
+<div class="modalOverlay" id="seasonEndOverlay">
+  <div class="modal arrivalModal">
+    <div style="font-size:2.6rem;">&#128666;</div>
+    <h2>Season's over.</h2>
+    <p class="sub" id="seasonCompanyLine"></p>
+    <div class="statgrid">
+      <div class="statcard"><div class="n" id="seasonProfit">$0</div><div class="l">profit (your score)</div></div>
+      <div class="statcard"><div class="n" id="seasonDelivered">0</div><div class="l">deliveries made</div></div>
+      <div class="statcard"><div class="n" id="seasonOnTime">0</div><div class="l">on time</div></div>
+      <div class="statcard"><div class="n" id="seasonTows">0</div><div class="l">times towed in</div></div>
+    </div>
+    <div class="refuelnote" id="seasonBestNote"></div>
+    <button class="introBtn" id="seasonNewBtn">Start a new season</button>
+    <button class="introBtn ghost" id="seasonKeepBtn">Keep driving (no score)</button>
+  </div>
+</div>
+
 <div class="modalOverlay" id="introEmailOverlay">
   <div class="modal emailModal">
     <div class="emailHead">
@@ -2175,12 +2192,14 @@ const MALLACOOTA_DISTANCE = ROUTE_CUM.find(l=>l.name==='Mallacoota').cumEnd;
 // The header/footer read "→ Mallacoota" until the door-note twist is triggered, then "→ Borroloola" -
 // derived from progress so a reloaded save past the twist shows the right destination too.
 function currentHeaderSub(){
+  if(state.deliveryMode === 'network') return `Network Deliveries · ${NET_SEASON_DAYS}-day season`;
   const pastTwist = state.distanceTraveled > MALLACOOTA_DISTANCE - 0.001;
   return pastTwist
     ? `Dampier, WA → Borroloola, NT · ${fmtKm(TOTAL_DISTANCE)} km`
     : `Dampier, WA → Mallacoota, VIC · ${fmtKm(MALLACOOTA_DISTANCE)} km`;
 }
 function currentFooterIntro(){
+  if(state.deliveryMode === 'network') return 'A full tank, a job board, and a season to make the most of.';
   const pastTwist = state.distanceTraveled > MALLACOOTA_DISTANCE - 0.001;
   return pastTwist
     ? 'A full tank. A long way to Borroloola now. Nowhere else you need to be.'
@@ -2276,6 +2295,8 @@ let state = {
   deliveryMode: 'classic',   // 'classic' (legacy fixed route) or 'network' (capital-city job system)
   networkCity: null,          // current city in Network Deliveries mode
   activeDeliveries: [],       // accepted jobs not yet completed, in Network Deliveries mode
+  netStats: { delivered:0, onTime:0 }, // Network season tally
+  seasonOver: false,          // true once the Network season's end screen has been shown
   gender: '',
   vehicle: 'van',
   petPreference: 'dog',
@@ -4317,10 +4338,41 @@ function netEstimateReward(km, weightClass){
   const variance = 0.85 + Math.random()*0.3;
   return Math.round((80 + km*perKm) * variance);
 }
+// How far this rig really gets in a day: energy runs out well before the 7pm cut-off,
+// and each morning starts at the comfort tier's share of a full battery.
+function netKmPerDay(){
+  const perf = currentPerf();
+  const tierPct = getTier(currentComfort()).energyPct;
+  return Math.max(150, Math.min(SPEED_KMH*(DAY_END_HOUR-DAY_START_HOUR), perf.maxEnergy*tierPct*perf.kmPerEnergy));
+}
 function netEstimateDeadlineDays(km, weightClass){
-  const driveDays = (km/85)/10;
-  const slack = { heavy:2.2, perishable:1.3, urgent:1.1, bulky:2.0, fragile:1.7 }[weightClass] || 1.8;
-  return Math.max(1, Math.ceil(driveDays*slack));
+  const driveDays = km / netKmPerDay();
+  const slack = { heavy:1.8, perishable:1.3, urgent:1.15, bulky:1.6, fragile:1.5 }[weightClass] || 1.5;
+  return Math.max(1, Math.ceil(driveDays*slack + 0.5));
+}
+// Km you'd drive from here to this job's drop-off, following the queued jobs in order.
+// For an offer that isn't accepted yet, it's worked out as if it went on the end.
+function netChainKmTo(job){
+  const saved = state.activeDeliveries;
+  const queued = saved.includes(job);
+  if(!queued) state.activeDeliveries = saved.concat([job]);
+  try{
+    const path = netDetailedPath();
+    let km = -(state.networkLegKm || 0);
+    for(let i=0;i<path.length;i++){
+      if(i>0) km += netEdgeKm(path[i-1].city, path[i].city) || 0;
+      if(path[i].events.some(e => e.type==='dropoff' && e.job === job)) return Math.max(0, km);
+    }
+    return Math.max(0, km);
+  } finally {
+    state.activeDeliveries = saved;
+  }
+}
+// Pay for a drop-off: full on time, 20% less for each day late, never below 30%.
+function netPayFor(job){
+  if(!job.dueDay || state.day <= job.dueDay) return { pay: job.reward, late: 0 };
+  const late = state.day - job.dueDay;
+  return { pay: Math.round(job.reward * Math.max(0.3, 1 - 0.2*late)), late };
 }
 function netGenerateJobOffers(originCity, count){
   count = count || 4;
@@ -4334,7 +4386,7 @@ function netGenerateJobOffers(originCity, count){
     if(!route) continue;
     const cargo = NET_CARGO_TYPES[Math.floor(Math.random()*NET_CARGO_TYPES.length)];
     const reward = netEstimateReward(route.km, cargo.weightClass);
-    const deadlineDays = netEstimateDeadlineDays(route.km, cargo.weightClass);
+    const deadlineDays = netEstimateDeadlineDays(route.km, cargo.weightClass); // refined per chain in renderJobCard
     offers.push({
       id: `job-${netJobIdCounter++}`, origin: originCity, destination: dest,
       distanceKm: route.km, routePath: route.path, cargo: cargo.name,
@@ -4378,7 +4430,7 @@ function renderJobCard(job){
       <div class="jcMeta">
         <span>${job.cargo}</span>
         <span>${fmtKm(job.distanceKm)} km</span>
-        <span>Due in ${job.deadlineDays}d</span>
+        <span>${job.accepted ? `Due day ${job.dueDay}` : `Due in ${job.deadlineDays}d`}</span>
         <span class="jcReward">$${job.reward}</span>
       </div>
       <div class="jcActions">
@@ -4391,6 +4443,10 @@ function renderJobCard(job){
 
 function renderJobOfferList(){
   const list = document.getElementById('jobOfferList');
+  // Due dates count the whole drive to the drop-off, including the jobs queued ahead of it.
+  for(const job of netCurrentOffers){
+    if(!job.accepted) job.deadlineDays = netEstimateDeadlineDays(netChainKmTo(job), job.weightClass);
+  }
   list.innerHTML = netCurrentOffers.map(renderJobCard).join('');
   list.querySelectorAll('.jcBtn').forEach(btn => {
     btn.onclick = () => {
@@ -4399,6 +4455,7 @@ function renderJobOfferList(){
       if(!job || job.accepted) return;
       if(btn.dataset.action === 'accept'){
         job.accepted = true;
+        job.dueDay = state.day + job.deadlineDays;
         if(job.origin === state.networkCity) job.pickedUp = true;
         state.activeDeliveries.push(job);
       } else {
@@ -4477,9 +4534,17 @@ function netSettleHere(){
       ev.job.pickedUp = true;
       pushLog(`\u{1F4E6} Picked up cargo in <strong>${here.city}</strong>: ${ev.job.cargo}.`, 'event');
     } else {
-      state.cash += ev.job.reward;
+      const { pay, late } = netPayFor(ev.job);
+      state.cash += pay;
       state.activeDeliveries = state.activeDeliveries.filter(j => j.id !== ev.job.id);
-      pushLog(`\u2705 Delivered to <strong>${here.city}</strong>. Paid <span style="color:var(--gold)">$${ev.job.reward}</span>.`, 'event');
+      if(!state.seasonOver){
+        state.netStats = state.netStats || { delivered:0, onTime:0 };
+        state.netStats.delivered += 1;
+        if(!late) state.netStats.onTime += 1;
+      }
+      pushLog(late
+        ? `\u2705 Delivered to <strong>${here.city}</strong>, ${late} day${late===1?'':'s'} late. Pay docked to <span style="color:var(--gold)">$${pay}</span> (was $${ev.job.reward}).`
+        : `\u2705 Delivered to <strong>${here.city}</strong> on time. Paid <span style="color:var(--gold)">$${pay}</span>.`, 'event');
     }
     changed = true;
   }
@@ -4525,6 +4590,54 @@ function netCanAffordFuel(kind){
   return state.cozyMode || state.cash >= netFuelPrice(kind);
 }
 
+/* ---- Network season: a fixed run of days, scored on profit ---- */
+const NET_SEASON_DAYS = 30;
+const NET_START_CASH = 500;
+const NET_BEST_KEY = 'across-country-au-net-best-v1';
+let netBest = null; // {profit, delivered, onTime}
+
+async function loadNetBest(){
+  try{ const r = await window.storage.get(NET_BEST_KEY); if(r && r.value) netBest = JSON.parse(r.value); }catch(e){ /* none yet */ }
+}
+// Call after each day change. Shows the end screen once the last day has been driven.
+function netCheckSeasonEnd(){
+  if(state.deliveryMode !== 'network' || state.seasonOver || state.day <= NET_SEASON_DAYS) return false;
+  state.seasonOver = true;
+  const stats = state.netStats || { delivered:0, onTime:0 };
+  const profit = state.cash - NET_START_CASH;
+  const run = { profit, delivered: stats.delivered, onTime: stats.onTime };
+  const isBest = !netBest || profit > netBest.profit;
+  const prevBest = netBest;
+  if(isBest){
+    netBest = run;
+    try{ window.storage.set(NET_BEST_KEY, JSON.stringify(netBest)); }catch(e){ /* ignore */ }
+  }
+  saveGame();
+  const money = n => (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString();
+  document.getElementById('seasonCompanyLine').textContent =
+    `${NET_SEASON_DAYS} days of work for ${state.companyName || 'No Fixed Address Deliveries'}.`;
+  document.getElementById('seasonProfit').textContent = money(profit);
+  document.getElementById('seasonDelivered').textContent = stats.delivered;
+  document.getElementById('seasonOnTime').textContent = stats.onTime;
+  document.getElementById('seasonTows').textContent = state.towCount;
+  document.getElementById('seasonBestNote').textContent = isBest
+    ? (prevBest ? `New best season - beats ${money(prevBest.profit)}.` : 'First season done - that\'s your best to beat.')
+    : `Your best season is still ${money(netBest.profit)}.`;
+  pushLog(`- The ${NET_SEASON_DAYS}-day season is over. Profit: ${money(profit)}. -`, 'day');
+  openOverlay('seasonEndOverlay');
+  return true;
+}
+document.getElementById('seasonKeepBtn').addEventListener('click', ()=>{
+  closeOverlay('seasonEndOverlay');
+  if(document.getElementById('gpsMapOverlay').classList.contains('show')) renderGpsHud();
+});
+document.getElementById('seasonNewBtn').addEventListener('click', ()=>{
+  closeOverlay('seasonEndOverlay');
+  closeOverlay('gpsMapOverlay');
+  closeOverlay('jobsOverlay');
+  resetRun();
+});
+
 function netMakeCamp(){
   const tier = getTier(currentComfort());
   pushLog(`- Day ${state.day} ends -`, 'day');
@@ -4535,6 +4648,7 @@ function netMakeCamp(){
   pushLog(`- Day ${state.day} begins. -`, 'day');
   saveGame();
   renderGpsHud();
+  netCheckSeasonEnd();
 }
 
 function netCallRoadsideAssist(){
@@ -4557,6 +4671,7 @@ function netCallRoadsideAssist(){
   saveGame();
   renderGpsHud();
   renderGpsMap(false);
+  netCheckSeasonEnd();
 }
 
 function updateGpsPlayerMarker(){
@@ -4652,7 +4767,7 @@ function renderGpsHud(){
   const detailed = netDetailedPath();
   const done = detailed.length < 2;
   hud.innerHTML = `
-    <span>Day ${state.day} \u00b7 ${fmtHour(state.hour)}</span>
+    <span>Day ${state.day}${state.seasonOver ? '' : ` of ${NET_SEASON_DAYS}`} \u00b7 ${fmtHour(state.hour)}</span>
     <span>\u26FD ${Math.round(state.fuel)}</span>
     <span>\u{1F50B} ${Math.round(state.energy)}</span>
     <span>\u{1F4B5} $${state.cash}</span>
@@ -4799,7 +4914,7 @@ function renderGpsMap(morph){
   document.getElementById('gpsRouteMeta').textContent =
     `${state.activeDeliveries.length} stop${state.activeDeliveries.length===1?'':'s'} planned \u00b7 ${fmtKm(totalKm)} km total`;
   document.getElementById('gpsStopsSummary').textContent = state.activeDeliveries.length
-    ? state.activeDeliveries.map(j => j.destination).join(' \u2192 ')
+    ? state.activeDeliveries.map(j => j.dueDay ? `${j.destination} (${state.day > j.dueDay ? 'late' : 'day ' + j.dueDay})` : j.destination).join(' \u2192 ')
     : 'No deliveries queued yet';
 }
 
@@ -4928,6 +5043,10 @@ document.getElementById('setupStartBtn').addEventListener('click', ()=>{
   state.inventory['jerry_can'] = 1;
   if(!state.discovered.includes('jerry_can')) state.discovered.push('jerry_can');
   state.deliveryMode = setupChoice.mode;
+  state.netStats = { delivered:0, onTime:0 };
+  state.seasonOver = false;
+  document.getElementById('headerSub').textContent = currentHeaderSub();
+  document.getElementById('footerNote').textContent = currentFooterIntro();
   closeOverlay('setupOverlay');
   saveGame();
   if(state.deliveryMode === 'network'){
@@ -5110,6 +5229,7 @@ async function saveGame(){
       poiLocation: state.poiLocation,
       deliveryMode: state.deliveryMode, networkCity: state.networkCity,
       activeDeliveries: state.activeDeliveries, networkLegKm: state.networkLegKm,
+      netStats: state.netStats, seasonOver: state.seasonOver,
       log: state.log.slice(0,25),
     };
     await window.storage.set(SAVE_KEY, JSON.stringify(data));
@@ -5157,6 +5277,9 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
   clearTimeout(resetTimer);
   resetArmed = false;
   btn.textContent = '↺ New Delivery';
+  resetRun();
+});
+async function resetRun(){
   Object.assign(state, {
     playerName:'', companyName:'', gender:'', vehicle:'van', petPreference:'dog', cozyMode:true,
     day:1, hour:6, fuel:BASE_MAX_FUEL, energy:BASE_MAX_ENERGY, cash:500,
@@ -5168,16 +5291,18 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
     perfectAchieved:false, distanceTraveled:0, arrived:false, arrivalCelebrated:false, runId:null,
     atServo:false, servoStopIdx:null, servoOffers:[], servoSnackOffers:[], poiLocation:null,
     deliveryMode:'classic', networkCity:null, activeDeliveries:[], networkLegKm:0,
+    netStats:{ delivered:0, onTime:0 }, seasonOver:false,
   });
   hideBanner();
   clearAllExploreToasts();
   closeOverlay('arrivalOverlay');
   closeOverlay('roadhouseOverlay');
   closeOverlay('introOverlay');
+  ['gpsMapOverlay','jobsOverlay','capitalPickerOverlay','seasonEndOverlay'].forEach(closeOverlay);
   try{ await window.storage.delete(SAVE_KEY); }catch(e){ /* nothing saved yet, fine */ }
   render();
   showSetup();
-});
+}
 
 /* ---------------- INIT ---------------- */
 document.getElementById('restBtn').addEventListener('click', ()=>{
@@ -5192,6 +5317,7 @@ document.getElementById('servoBtn').addEventListener('click', reopenServo);
   document.getElementById('headerSub').textContent = `Dampier, WA → Mallacoota, VIC · ${fmtKm(MALLACOOTA_DISTANCE)} km`;
   await initSoundPref();
   await loadBest();
+  await loadNetBest();
   renderBestScoreLine();
   const loaded = await loadGame();
   if(loaded){
@@ -5205,6 +5331,8 @@ document.getElementById('servoBtn').addEventListener('click', reopenServo);
       if(!state.networkCity || !(state.networkCity in NET_NODES)) showCapitalPicker();
       else if(!state.activeDeliveries || state.activeDeliveries.length === 0) showJobOffers(state.networkCity);
       else openGpsMap(false);
+      document.getElementById('footerNote').textContent = `day ${state.day} of ${NET_SEASON_DAYS} · ${state.networkCity || 'no base yet'} · $${state.cash}`;
+      netCheckSeasonEnd();
     } else if(state.arrived && !state.arrivalCelebrated){ showArrival(); }
   } else {
     render();
